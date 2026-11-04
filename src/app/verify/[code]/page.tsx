@@ -6,6 +6,7 @@ import { formatDateTime, formatMonth } from "@/lib/domain/calendar";
 import { formatDays, formatEur } from "@/lib/domain/timesheet";
 import { AUTH_CODE_PATTERN } from "@/lib/documents/auth-code";
 import { verifyAuthCode } from "@/lib/documents/content";
+import { clientIp, limited } from "@/lib/rate-limit";
 
 export default function VerifyCodePage({ params }: { params: Promise<{ code: string }> }) {
   return (
@@ -17,6 +18,13 @@ export default function VerifyCodePage({ params }: { params: Promise<{ code: str
 
 async function Result({ params }: { params: Promise<{ code: string }> }) {
   await connection();
+  if (await limited("verify", await clientIp())) {
+    return (
+      <section role="status" className="rounded-card border border-line bg-surface p-6 text-[13.5px] text-ink-3 shadow-card">
+        Trop de vérifications depuis votre adresse : réessayez dans une minute.
+      </section>
+    );
+  }
   const raw = (await params).code;
   let code: string;
   try {
@@ -90,7 +98,11 @@ async function Result({ params }: { params: Promise<{ code: string }> }) {
         <dt className="text-ink-muted">Montant HT</dt>
         <dd className="font-semibold">{formatEur(doc.totals.amountCents, doc.currency)}</dd>
         <dt className="text-ink-muted">Statut</dt>
-        <dd>{validated ? `Validé le ${doc.validatedAt ? formatDateTime(doc.validatedAt) : "—"}` : "Soumis, en attente de validation"}</dd>
+        <dd>
+          {validated
+            ? `Validé le ${doc.validatedAt ? formatDateTime(doc.validatedAt) : "—"}`
+            : "Soumis, en attente de validation"}
+        </dd>
       </dl>
       {back}
     </section>

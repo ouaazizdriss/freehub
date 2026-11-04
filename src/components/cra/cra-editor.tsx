@@ -116,13 +116,17 @@ export function CraEditor({ data, today }: Props) {
   };
 
   const declared = useMemo(() => new Set(editor.declaredAbsences), [editor.declaredAbsences]);
-  const pendingAbsences = editor.declaredAbsences.filter((d) => (days.get(d)?.workHalfDays ?? 0) + (days.get(d)?.absenceHalfDays ?? 0) === 0);
+  const pendingAbsences = editor.declaredAbsences.filter(
+    (d) => (days.get(d)?.workHalfDays ?? 0) + (days.get(d)?.absenceHalfDays ?? 0) === 0,
+  );
   /** Reporte les absences déclarées sur les jours encore vides (jamais sur un jour déjà saisi). */
   const applyDeclaredAbsences = () => {
     const next = new Map(days);
     for (const d of pendingAbsences) next.set(d, withKind(next.get(d) ?? emptyDay(d), "absence"));
     commit(next);
-    setAnnouncement(`${pendingAbsences.length} jour${pendingAbsences.length > 1 ? "s" : ""} d'absence reporté${pendingAbsences.length > 1 ? "s" : ""}.`);
+    setAnnouncement(
+      `${pendingAbsences.length} jour${pendingAbsences.length > 1 ? "s" : ""} d'absence reporté${pendingAbsences.length > 1 ? "s" : ""}.`,
+    );
   };
 
   const applyWeek = () => {
@@ -136,7 +140,12 @@ export function CraEditor({ data, today }: Props) {
 
   const go = async (href: string) => {
     const saved = await autosave.flush();
-    if (!saved && autosave.hasUnsaved() && !window.confirm("Vos dernières modifications ne sont pas enregistrées. Quitter quand même ?")) return;
+    if (
+      !saved &&
+      autosave.hasUnsaved() &&
+      !window.confirm("Vos dernières modifications ne sont pas enregistrées. Quitter quand même ?")
+    )
+      return;
     router.push(href);
   };
 
@@ -149,11 +158,14 @@ export function CraEditor({ data, today }: Props) {
       <div className="rounded-card bg-gradient-primary px-5 py-4 text-white shadow-cta md:hidden">
         <div className="flex items-center justify-between gap-2">
           <p className="text-[13px] font-semibold capitalize opacity-90">{formatMonth(year, month1)}</p>
-          <span className="rounded-pill bg-white px-2.5 py-0.5 text-[11px] font-bold text-purple">{STATUS_SHORT[editor.status]}</span>
+          <span className="rounded-pill bg-white px-2.5 py-0.5 text-[11px] font-bold text-purple">
+            {STATUS_SHORT[editor.status]}
+          </span>
         </div>
         <p className="mt-1 text-[21px] font-extrabold tabular-nums">{formatEur(totals.amountCents, editor.currency)}</p>
         <p className="text-[12px] opacity-90">
-          {formatHalfDays(totals.workHalfDays)} travaillés · {totals.overtimeHours} h sup. · {totals.onCall} astreinte{totals.onCall > 1 ? "s" : ""}
+          {formatHalfDays(totals.workHalfDays)} travaillés · {totals.overtimeHours} h sup. · {totals.onCall} astreinte
+          {totals.onCall > 1 ? "s" : ""}
         </p>
       </div>
       <Toolbar
@@ -166,9 +178,7 @@ export function CraEditor({ data, today }: Props) {
         saveState={autosave.state}
         onNavigate={go}
         onRetry={() => void autosave.flush()}
-        documents={
-          editor.timesheetId ? <DocumentLinks timesheetId={editor.timesheetId} prepare={autosave.flush} /> : null
-        }
+        documents={editor.timesheetId ? <DocumentLinks timesheetId={editor.timesheetId} prepare={autosave.flush} /> : null}
         submit={
           <SubmitButton
             status={editor.status}
@@ -219,10 +229,14 @@ export function CraEditor({ data, today }: Props) {
           {editable && pendingAbsences.length > 0 ? (
             <div className="mt-3 flex flex-wrap items-center gap-3 rounded-control bg-warning-bg px-3 py-2 text-[12.5px] text-warning">
               <span>
-                {pendingAbsences.length} jour{pendingAbsences.length > 1 ? "s" : ""} d&apos;absence déclarée{pendingAbsences.length > 1 ? "s" : ""} non
-                reporté{pendingAbsences.length > 1 ? "s" : ""} (cases « Abs. ? »).
+                {pendingAbsences.length} jour{pendingAbsences.length > 1 ? "s" : ""} d&apos;absence déclarée
+                {pendingAbsences.length > 1 ? "s" : ""} non reporté{pendingAbsences.length > 1 ? "s" : ""} (cases « Abs. ? »).
               </span>
-              <button type="button" onClick={applyDeclaredAbsences} className="min-h-11 rounded-control border border-warning px-3 font-semibold">
+              <button
+                type="button"
+                onClick={applyDeclaredAbsences}
+                className="min-h-11 rounded-control border border-warning px-3 font-semibold"
+              >
                 Reporter mes absences
               </button>
             </div>
@@ -232,9 +246,9 @@ export function CraEditor({ data, today }: Props) {
           </p>
           {editable ? (
             <p className="mt-3 text-[11.5px] text-ink-subtle">
-              Clavier : flèches pour changer de jour,{" "}
-              <kbd className="font-semibold">J</kbd> journée, <kbd className="font-semibold">D</kbd> demi-journée,{" "}
-              <kbd className="font-semibold">A</kbd> absence, <kbd className="font-semibold">N</kbd> non travaillé.
+              Clavier : flèches pour changer de jour, <kbd className="font-semibold">J</kbd> journée,{" "}
+              <kbd className="font-semibold">D</kbd> demi-journée, <kbd className="font-semibold">A</kbd> absence,{" "}
+              <kbd className="font-semibold">N</kbd> non travaillé.
             </p>
           ) : null}
           <dl className="mt-4 flex flex-wrap gap-2.5 border-t border-line-soft pt-4">
@@ -264,7 +278,12 @@ export function CraEditor({ data, today }: Props) {
             />
           </div>
           <SignatureCard signature={data.signature} />
-          <AmountCard totals={totals} rates={editor.rates} currency={editor.currency} poRemainingHalfDays={editor.poRemainingHalfDays} />
+          <AmountCard
+            totals={totals}
+            rates={editor.rates}
+            currency={editor.currency}
+            poRemainingHalfDays={editor.poRemainingHalfDays}
+          />
         </aside>
       </div>
     </div>
@@ -380,7 +399,9 @@ function Toolbar(props: {
                   if (!current) props.onNavigate(href);
                 }}
                 className={`flex min-h-11 items-center rounded-control border px-3 text-[12.5px] font-semibold ${
-                  current ? "border-purple bg-purple text-white" : "border-line-strong bg-surface text-ink-3 hover:bg-surface-soft"
+                  current
+                    ? "border-purple bg-purple text-white"
+                    : "border-line-strong bg-surface text-ink-3 hover:bg-surface-soft"
                 }`}
               >
                 {c.label}
@@ -425,7 +446,9 @@ function SaveIndicator({ state, onRetry }: { state: SaveState; onRetry: () => vo
           </span>
         );
       case "invalid":
-        return <span className="text-danger">Saisie refusée : {state.issues.map(issueMessage).join(" ") || "données invalides."}</span>;
+        return (
+          <span className="text-danger">Saisie refusée : {state.issues.map(issueMessage).join(" ") || "données invalides."}</span>
+        );
       default:
         return null;
     }
@@ -449,11 +472,21 @@ function SaveIndicator({ state, onRetry }: { state: SaveState; onRetry: () => vo
   );
 }
 
-function StatusBanner({ editor, saveState, onReload }: { editor: Props["data"]["editor"]; saveState: SaveState; onReload: () => void }) {
-
+function StatusBanner({
+  editor,
+  saveState,
+  onReload,
+}: {
+  editor: Props["data"]["editor"];
+  saveState: SaveState;
+  onReload: () => void;
+}) {
   if (saveState.status === "conflict" || saveState.status === "locked") {
     return (
-      <div role="alert" className="flex flex-wrap items-center gap-3 rounded-control bg-danger-bg px-4 py-3 text-[13px] text-danger">
+      <div
+        role="alert"
+        className="flex flex-wrap items-center gap-3 rounded-control bg-danger-bg px-4 py-3 text-[13px] text-danger"
+      >
         {saveState.status === "conflict"
           ? "Ce CRA a été modifié ailleurs (autre onglet ou appareil). Vos dernières modifications ne sont pas enregistrées."
           : "Ce CRA n'est plus modifiable (il a été soumis entre-temps)."}
@@ -516,13 +549,21 @@ function SubmitButton(props: {
 
   if (props.status === "SUBMITTED")
     return (
-      <button type="button" disabled className="min-h-11 rounded-control bg-surface-sunken px-4 text-[12.5px] font-semibold text-ink-subtle">
+      <button
+        type="button"
+        disabled
+        className="min-h-11 rounded-control bg-surface-sunken px-4 text-[12.5px] font-semibold text-ink-subtle"
+      >
         En attente du manager
       </button>
     );
   if (props.status === "VALIDATED")
     return (
-      <button type="button" disabled className="min-h-11 rounded-control bg-success-bg px-4 text-[12.5px] font-semibold text-success">
+      <button
+        type="button"
+        disabled
+        className="min-h-11 rounded-control bg-success-bg px-4 text-[12.5px] font-semibold text-success"
+      >
         CRA validé
       </button>
     );
@@ -579,7 +620,9 @@ function SubmitButton(props: {
         <h2 id="recap-titre" className="text-[17px] font-bold">
           Soumettre le CRA
         </h2>
-        <p className="mt-1 text-[13px] text-ink-muted">Après soumission, le CRA part en validation et n&apos;est plus modifiable.</p>
+        <p className="mt-1 text-[13px] text-ink-muted">
+          Après soumission, le CRA part en validation et n&apos;est plus modifiable.
+        </p>
 
         <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[13px]">
           <dt className="text-ink-muted">Jours travaillés</dt>
@@ -673,7 +716,12 @@ function DocumentLinks({ timesheetId, prepare }: { timesheetId: string; prepare:
     } catch {
       saved = false;
     }
-    if (!saved && !window.confirm("La saisie en cours n'est pas enregistrée : le document affichera la dernière version enregistrée. Continuer ?")) {
+    if (
+      !saved &&
+      !window.confirm(
+        "La saisie en cours n'est pas enregistrée : le document affichera la dernière version enregistrée. Continuer ?",
+      )
+    ) {
       tab?.close();
       return;
     }
@@ -681,7 +729,8 @@ function DocumentLinks({ timesheetId, prepare }: { timesheetId: string; prepare:
     else window.location.href = href;
   };
   const base = `/api/cra/${encodeURIComponent(timesheetId)}`;
-  const link = "flex min-h-11 items-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 text-[12.5px] font-semibold text-ink-3 hover:bg-surface-soft";
+  const link =
+    "flex min-h-11 items-center gap-1.5 rounded-control border border-line-strong bg-surface px-3 text-[12.5px] font-semibold text-ink-3 hover:bg-surface-soft";
   return (
     <>
       <a href={`${base}/xlsx`} onClick={(e) => open(e, `${base}/xlsx`, false)} className={link}>
@@ -702,7 +751,8 @@ function useTextFocus() {
   const [typing, setTyping] = useState(false);
   useEffect(() => {
     const isText = (el: EventTarget | null) =>
-      el instanceof HTMLTextAreaElement || (el instanceof HTMLInputElement && !["checkbox", "radio", "file", "button", "submit"].includes(el.type));
+      el instanceof HTMLTextAreaElement ||
+      (el instanceof HTMLInputElement && !["checkbox", "radio", "file", "button", "submit"].includes(el.type));
     const onIn = (e: FocusEvent) => setTyping(isText(e.target));
     const onOut = () => setTyping(false);
     document.addEventListener("focusin", onIn);

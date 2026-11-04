@@ -32,8 +32,8 @@ export function BulkValidate({ count }: { count: number }) {
           Tout valider
         </h2>
         <p className="mt-2 text-[13px] text-ink-muted">
-          {count} CRA dans la file. Seront validés ceux qui n&apos;ont <strong>aucun avertissement</strong> : travail un week-end ou
-          un férié, heures sup. au-delà du seuil, bon de commande tendu ou dépassé, mois non terminé. Les simples informations
+          {count} CRA dans la file. Seront validés ceux qui n&apos;ont <strong>aucun avertissement</strong> : travail un week-end
+          ou un férié, heures sup. au-delà du seuil, bon de commande tendu ou dépassé, mois non terminé. Les simples informations
           (astreintes, commentaires, jours non saisis, variation de montant) n&apos;empêchent pas la validation.
         </p>
         <p role="status" className="mt-3 min-h-5 text-[13px] font-semibold text-success">

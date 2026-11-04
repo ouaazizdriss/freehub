@@ -9,7 +9,11 @@ const STATUS_STYLE: Record<FreelancerStatus, string> = {
 };
 
 export function FreelancerStatusPill({ status }: { status: FreelancerStatus }) {
-  return <span className={`inline-block rounded-pill px-2.5 py-1 text-xs font-bold whitespace-nowrap ${STATUS_STYLE[status]}`}>{FREELANCER_STATUS_LABELS[status]}</span>;
+  return (
+    <span className={`inline-block rounded-pill px-2.5 py-1 text-xs font-bold whitespace-nowrap ${STATUS_STYLE[status]}`}>
+      {FREELANCER_STATUS_LABELS[status]}
+    </span>
+  );
 }
 
 const BAR: Record<PoLevel, string> = { ok: "bg-purple", tight: "bg-orange", exceeded: "bg-danger-bright" };
@@ -37,4 +41,8 @@ export function DocumentStatePill({ state }: { state: DocumentState }) {
 }
 
 export const formatIsoDate = (iso: string | null) =>
-  iso ? new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`)) : "—";
+  iso
+    ? new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" }).format(
+        new Date(`${iso}T00:00:00Z`),
+      )
+    : "—";

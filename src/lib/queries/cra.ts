@@ -1,11 +1,12 @@
 import "server-only";
 import type { CurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
+import { timesheetScope } from "./validation";
 
 /** CRA visibles : les siens pour un freelance, tous pour l'admin. */
 export async function listTimesheets(user: CurrentUser) {
   return db.timesheet.findMany({
-    where: user.role === "FREELANCE" ? { freelancer: { userId: user.id } } : {},
+    where: user.role === "FREELANCE" ? { freelancer: { userId: user.id } } : timesheetScope(user),
     orderBy: [{ month: "desc" }],
     take: 50,
     select: {

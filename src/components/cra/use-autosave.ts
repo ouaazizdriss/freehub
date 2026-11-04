@@ -71,7 +71,13 @@ export function useAutosave(opts: {
   const timesheetId = useRef(opts.timesheetId);
   const writeCopy = useCallback(
     (days: EditableDay[]) => {
-      const ok = store(storageKey, { version: version.current, timesheetId: timesheetId.current, tabId: TAB_ID, days, at: Date.now() });
+      const ok = store(storageKey, {
+        version: version.current,
+        timesheetId: timesheetId.current,
+        tabId: TAB_ID,
+        days,
+        at: Date.now(),
+      });
       if (!ok) setOfflineNotice("Sauvegarde locale indisponible sur cet appareil : la saisie hors ligne n'est pas protégée.");
     },
     [storageKey],

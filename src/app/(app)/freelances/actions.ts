@@ -2,6 +2,7 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
+import { calendarDate, isCalendarDate } from "@/lib/validation";
 import { requireRole, type CurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { Prisma } from "@/generated/prisma/client";
@@ -11,7 +12,7 @@ import { REFERENTIAL_EDITORS } from "@/lib/queries/referential";
 /** État renvoyé aux formulaires (useActionState). */
 export type FormState = { ok: boolean; message: string; errors?: Record<string, string>; id?: string } | null;
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide");
+const isoDate = calendarDate;
 const text = (max: number) => z.string().trim().max(max);
 const optional = (max: number) =>
   z
@@ -114,7 +115,8 @@ export async function setFreelancerActive(_prev: FormState, data: FormData): Pro
   try {
     await db.freelancer.update({
       where: { id: parsed.data.id },
-      data: { user: { update: { active, deactivatedAt: active ? null : new Date() } } },
+      // Désactivation : sessions révoquées immédiatement.
+      data: { user: { update: { active, deactivatedAt: active ? null : new Date(), sessionVersion: { increment: 1 } } } },
     });
   } catch (e) {
     const known = unique(e, "");
@@ -323,6 +325,12 @@ export async function updateContract(_prev: FormState, data: FormData): Promise<
   const end = new Date(`${c.endDate}T00:00:00Z`);
   const problem = await db.$transaction(async (tx) => {
     await lockContracts(tx, contract.freelancerId, contract.missionId);
+    // Verrou de la ligne contrat (pris aussi par la soumission d'un CRA) puis recontrôle du gel des taux :
+    // une soumission concurrente ne peut plus se glisser entre le contrôle et la modification.
+    await tx.$queryRaw`SELECT id FROM "Contract" WHERE id = ${c.id} FOR UPDATE`;
+    const submitted = await tx.timesheet.count({ where: { contractId: c.id, status: { in: ["SUBMITTED", "VALIDATED"] } } });
+    if (ratesChanged && submitted > 0)
+      return "Des CRA ont été soumis sur ce contrat : créez un nouveau contrat (avenant) pour changer les taux.";
     // Prolongation : pas de chevauchement avec un autre contrat de la même mission.
     const overlap = await tx.contract.count({
       where: {
@@ -382,7 +390,7 @@ const documentSchema = z
       .string()
       .trim()
       .transform((v) => (v === "" ? null : v))
-      .refine((v) => v === null || /^\d{4}-\d{2}-\d{2}$/.test(v), "Date invalide"),
+      .refine((v) => v === null || isCalendarDate(v), "Date invalide"),
   })
   .superRefine((d, ctx) => {
     if (d.expiresAt === null) {

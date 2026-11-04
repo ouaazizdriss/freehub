@@ -34,7 +34,15 @@ const ERRORS: Record<Exclude<DecisionResult, { ok: true }>["error"], string> = {
   INVALID: "Données invalides.",
 };
 
-export function DecisionPanel({ detail, canDecide, nextHref }: { detail: ValidationDetail; canDecide: boolean; nextHref: string }) {
+export function DecisionPanel({
+  detail,
+  canDecide,
+  nextHref,
+}: {
+  detail: ValidationDetail;
+  canDecide: boolean;
+  nextHref: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +50,9 @@ export function DecisionPanel({ detail, canDecide, nextHref }: { detail: Validat
   const dialog = useRef<HTMLDialogElement>(null);
 
   const days = new Map(detail.days.map((d) => [d.date, d]));
-  const holidays = new Map<IsoDate, HolidayInfo>(detail.holidays.map((h) => [h.date, { label: h.label, tentative: h.tentative }]));
+  const holidays = new Map<IsoDate, HolidayInfo>(
+    detail.holidays.map((h) => [h.date, { label: h.label, tentative: h.tentative }]),
+  );
   const day = days.get(selected) ?? emptyDay(selected);
   const decidable = canDecide && detail.status === "SUBMITTED";
   const eur = (c: number | null) => formatEur(c ?? 0);
@@ -208,7 +218,9 @@ export function DecisionPanel({ detail, canDecide, nextHref }: { detail: Validat
           />
         </div>
       ) : !canDecide ? (
-        <p className="rounded-control bg-surface-sunken px-3 py-2 text-[12px] text-ink-subtle">Consultation seule pour votre profil.</p>
+        <p className="rounded-control bg-surface-sunken px-3 py-2 text-[12px] text-ink-subtle">
+          Consultation seule pour votre profil.
+        </p>
       ) : null}
 
       {detail.history.length > 0 ? (

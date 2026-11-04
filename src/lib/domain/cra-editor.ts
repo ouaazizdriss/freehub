@@ -95,7 +95,12 @@ export function inPeriod(date: IsoDate, periods: readonly Period[]): boolean {
  * « Appliquer à toute la semaine » : jours ouvrés (lun–ven) de la semaine ISO du jour donné,
  * dans le mois et la période du contrat, hors jours fériés.
  */
-export function weekTargets(date: IsoDate, monthDays: readonly IsoDate[], holidays: ReadonlySet<IsoDate>, periods: readonly Period[]) {
+export function weekTargets(
+  date: IsoDate,
+  monthDays: readonly IsoDate[],
+  holidays: ReadonlySet<IsoDate>,
+  periods: readonly Period[],
+) {
   const index = monthDays.indexOf(date);
   if (index < 0) return [];
   const monday = index - weekdayMon0(date);
@@ -222,4 +227,3 @@ export function issueMessage(issue: SubmissionIssue): string {
   const base = ISSUE_MESSAGES[issue.code];
   return issue.count !== undefined ? `${issue.count} ${base}` : base;
 }
-

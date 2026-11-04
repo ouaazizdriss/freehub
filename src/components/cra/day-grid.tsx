@@ -25,8 +25,10 @@ type CellLook = { className: string; label: string; spoken: string };
 
 export function describeDay(day: EditableDay, opts: { holiday?: HolidayInfo; weekend: boolean; inContract: boolean }): CellLook {
   const kind = kindOf(day);
-  if (!opts.inContract) return { className: "bg-cell-weekend border-cell-weekend-line text-cell-weekend-ink", label: "", spoken: "hors contrat" };
-  if (kind === "work") return { className: "bg-cell-work border-cell-work-line text-cell-work-ink", label: "1 j", spoken: "1 journée" };
+  if (!opts.inContract)
+    return { className: "bg-cell-weekend border-cell-weekend-line text-cell-weekend-ink", label: "", spoken: "hors contrat" };
+  if (kind === "work")
+    return { className: "bg-cell-work border-cell-work-line text-cell-work-ink", label: "1 j", spoken: "1 journée" };
   if (kind === "half") {
     const mixed = day.absenceHalfDays > 0;
     return {
@@ -35,9 +37,16 @@ export function describeDay(day: EditableDay, opts: { holiday?: HolidayInfo; wee
       spoken: `demi-journée ${day.half === "PM" ? "l'après-midi" : "le matin"}${mixed ? ", demi-journée d'absence" : ""}`,
     };
   }
-  if (kind === "absence") return { className: "bg-cell-absence border-cell-absence-line text-cell-absence-ink", label: "Absence", spoken: "absence" };
-  if (opts.holiday) return { className: "bg-cell-holiday border-cell-holiday-line text-cell-holiday-ink", label: "Férié", spoken: `férié, ${opts.holiday.label}` };
-  if (opts.weekend) return { className: "bg-cell-weekend border-cell-weekend-line text-cell-weekend-ink", label: "", spoken: "week-end" };
+  if (kind === "absence")
+    return { className: "bg-cell-absence border-cell-absence-line text-cell-absence-ink", label: "Absence", spoken: "absence" };
+  if (opts.holiday)
+    return {
+      className: "bg-cell-holiday border-cell-holiday-line text-cell-holiday-ink",
+      label: "Férié",
+      spoken: `férié, ${opts.holiday.label}`,
+    };
+  if (opts.weekend)
+    return { className: "bg-cell-weekend border-cell-weekend-line text-cell-weekend-ink", label: "", spoken: "week-end" };
   return { className: "bg-cell-empty border-cell-empty-line text-cell-empty-ink", label: "—", spoken: "non travaillé" };
 }
 
@@ -62,7 +71,19 @@ type Props = {
  * flèches pour se déplacer (la sélection suit le focus), Début/Fin pour la semaine,
  * lettres J / D / A / N pour saisir le type de la journée sélectionnée.
  */
-export function DayGrid({ year, month1, days, holidays, periods, selected, issueDates, onSelect, onShortcut, compact = false, declared }: Props) {
+export function DayGrid({
+  year,
+  month1,
+  days,
+  holidays,
+  periods,
+  selected,
+  issueDates,
+  onSelect,
+  onShortcut,
+  compact = false,
+  declared,
+}: Props) {
   // Mobile : cases de 44 px (cible tactile), sans libellé ; le type reste porté par la couleur et le nom accessible.
   const cellHeight = compact ? "h-[40px]" : "h-11 sm:h-[74px]";
   const { leadingBlanks, rows, dates } = monthGrid(year, month1);
@@ -103,7 +124,12 @@ export function DayGrid({ year, month1, days, holidays, periods, selected, issue
   while (grid.length < rows * 7) grid.push(null);
 
   return (
-    <div role="grid" aria-label="Jours du mois" onKeyDown={onKeyDown} className={`flex flex-col ${compact ? "gap-1" : "gap-1 sm:gap-1.5"}`}>
+    <div
+      role="grid"
+      aria-label="Jours du mois"
+      onKeyDown={onKeyDown}
+      className={`flex flex-col ${compact ? "gap-1" : "gap-1 sm:gap-1.5"}`}
+    >
       <div role="row" className={`grid grid-cols-7 ${compact ? "gap-1" : "gap-1 sm:gap-1.5"}`}>
         {WEEKDAYS.map(([short, long]) => (
           <div
@@ -125,7 +151,11 @@ export function DayGrid({ year, month1, days, holidays, periods, selected, issue
             const inContract = inPeriod(date, periods);
             const pendingAbsence = !!declared?.has(date) && kindOf(day) === "off" && inContract;
             const look = pendingAbsence
-              ? { className: "bg-cell-empty border-dashed border-cell-absence-ink text-cell-absence-ink", label: "Abs. ?", spoken: "absence déclarée, non reportée" }
+              ? {
+                  className: "bg-cell-empty border-dashed border-cell-absence-ink text-cell-absence-ink",
+                  label: "Abs. ?",
+                  spoken: "absence déclarée, non reportée",
+                }
               : describeDay(day, { holiday, weekend: isWeekend(date), inContract });
             const isSelected = date === selected;
             const hasIssue = issueDates.has(date);
@@ -154,7 +184,9 @@ export function DayGrid({ year, month1, days, holidays, periods, selected, issue
               >
                 {/* Nom accessible porté par le contenu (pas d'aria-label) : WCAG 2.5.3, le nom contient le texte visible. */}
                 <span className="sr-only">
-                  {[formatLongDate(date), look.label && look.label !== "—" ? look.label : null, look.spoken, ...extras].filter(Boolean).join(", ")}
+                  {[formatLongDate(date), look.label && look.label !== "—" ? look.label : null, look.spoken, ...extras]
+                    .filter(Boolean)
+                    .join(", ")}
                 </span>
                 <span aria-hidden className={compact ? "text-[10px] font-semibold" : "text-[11.5px] font-semibold"}>
                   {Number(date.slice(8))}

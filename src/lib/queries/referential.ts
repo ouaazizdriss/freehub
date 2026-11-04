@@ -26,10 +26,19 @@ export function missionScope(user: CurrentUser): Prisma.MissionWhereInput {
   return { id: "__none__" };
 }
 
-/** Freelances visibles : ceux qui ont (eu) un contrat sur une mission du périmètre. */
+/** Après la fin d'une collaboration, un manager garde l'accès à la fiche pendant cette durée (mois). */
+const MANAGER_ACCESS_AFTER_CONTRACT_MONTHS = 6;
+
+/**
+ * Freelances visibles : pour un manager, ceux qui ont un contrat en cours sur l'une de ses missions,
+ * ou terminé depuis moins de 6 mois (moindre privilège : pas d'accès indéfini aux pièces d'un ancien
+ * prestataire). Admin et finance : tous.
+ */
 export function freelancerScope(user: CurrentUser): Prisma.FreelancerWhereInput {
   if (user.role === "ADMIN" || user.role === "FINANCE") return {};
-  return { contracts: { some: { mission: missionScope(user) } } };
+  const since = new Date();
+  since.setUTCMonth(since.getUTCMonth() - MANAGER_ACCESS_AFTER_CONTRACT_MONTHS);
+  return { contracts: { some: { mission: missionScope(user), endDate: { gte: since } } } };
 }
 
 async function poConsumption(poIds: string[]) {
@@ -80,7 +89,10 @@ export async function listFreelancers(user: CurrentUser, today: IsoDate): Promis
           mission: {
             select: {
               name: true,
-              purchaseOrders: { orderBy: { endDate: "desc" }, select: { id: true, number: true, budgetHalfDays: true, startDate: true, endDate: true } },
+              purchaseOrders: {
+                orderBy: { endDate: "desc" },
+                select: { id: true, number: true, budgetHalfDays: true, startDate: true, endDate: true },
+              },
             },
           },
         },
@@ -122,7 +134,12 @@ export async function listFreelancers(user: CurrentUser, today: IsoDate): Promis
       contractEnd,
       documents,
       status: f.user.active
-        ? freelancerStatus({ contractEnd, poLevel: po ? poHealth(po.budgetHalfDays, used ?? 0).level : null, docs: documents, today })
+        ? freelancerStatus({
+            contractEnd,
+            poLevel: po ? poHealth(po.budgetHalfDays, used ?? 0).level : null,
+            docs: documents,
+            today,
+          })
         : "INACTIVE",
     };
   });
@@ -217,7 +234,11 @@ export async function getFreelancer(user: CurrentUser, id: string) {
 }
 
 export async function listManagers() {
-  return db.user.findMany({ where: { role: "MANAGER", active: true }, orderBy: { name: "asc" }, select: { id: true, name: true } });
+  return db.user.findMany({
+    where: { role: "MANAGER", active: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
 }
 
 export async function listMissionOptions() {
@@ -247,7 +268,10 @@ export async function expectedTimesheets(scope: Prisma.MissionWhereInput, year: 
         mission: {
           select: {
             name: true,
-            purchaseOrders: { where: { startDate: { lte: last }, endDate: { gte: first } }, select: { id: true, startDate: true, endDate: true } },
+            purchaseOrders: {
+              where: { startDate: { lte: last }, endDate: { gte: first } },
+              select: { id: true, startDate: true, endDate: true },
+            },
           },
         },
       },
@@ -282,7 +306,9 @@ export async function expectedTimesheets(scope: Prisma.MissionWhereInput, year: 
     else if (s === "SUBMITTED") toValidate++;
     else missing.push(e);
   }
-  const billedHalfDays = timesheets.filter((t) => CONSUMING_STATUSES.includes(t.status)).reduce((s, t) => s + t.totalWorkHalfDays, 0);
+  const billedHalfDays = timesheets
+    .filter((t) => CONSUMING_STATUSES.includes(t.status))
+    .reduce((s, t) => s + t.totalWorkHalfDays, 0);
   return { expected: expected.size, validated, toValidate, missing, billedHalfDays };
 }
 
@@ -320,7 +346,9 @@ export async function dashboard(user: CurrentUser, today: IsoDate) {
   const late = previousClosing && today > previous.deadline ? previousClosing.missing : [];
   const lateLabel = formatMonth(previous.year, previous.month1).replace(/^./, (c) => c.toUpperCase());
 
-  const activePos = missions.flatMap((m) => m.purchaseOrders.filter((p) => p.endDate >= today).map((p) => ({ ...p, mission: m.name })));
+  const activePos = missions.flatMap((m) =>
+    m.purchaseOrders.filter((p) => p.endDate >= today).map((p) => ({ ...p, mission: m.name })),
+  );
   const budget = activePos.reduce((s, p) => s + p.budgetHalfDays, 0);
   const consumed = activePos.reduce((s, p) => s + p.consumedHalfDays, 0);
   const closingLabel = formatMonth(period.year, period.month1).replace(/^./, (c) => c.toUpperCase());
@@ -328,7 +356,12 @@ export async function dashboard(user: CurrentUser, today: IsoDate) {
   const alerts = buildAlerts({
     today,
     closingLabel: lateLabel,
-    purchaseOrders: activePos.map((p) => ({ number: p.number, mission: p.mission, budgetHalfDays: p.budgetHalfDays, consumedHalfDays: p.consumedHalfDays })),
+    purchaseOrders: activePos.map((p) => ({
+      number: p.number,
+      mission: p.mission,
+      budgetHalfDays: p.budgetHalfDays,
+      consumedHalfDays: p.consumedHalfDays,
+    })),
     contracts: activeContracts.map((c) => ({
       freelancer: c.freelancer.user.name,
       freelancerId: c.freelancerId,
@@ -358,7 +391,12 @@ export async function dashboard(user: CurrentUser, today: IsoDate) {
       late: late.length,
       missing: closing.missing.length,
     },
-    closing: { expected: closing.expected, validated: closing.validated, toValidate: closing.toValidate, missing: closing.missing.length },
+    closing: {
+      expected: closing.expected,
+      validated: closing.validated,
+      toValidate: closing.toValidate,
+      missing: closing.missing.length,
+    },
     missions: activePos.map((p) => ({
       id: p.id,
       mission: p.mission,

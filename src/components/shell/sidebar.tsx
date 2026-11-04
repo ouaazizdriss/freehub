@@ -1,4 +1,5 @@
 import { signOut } from "@/auth";
+import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth/dal";
 import { closingPeriod, formatLongDate, formatMonth, todayIso } from "@/lib/domain/calendar";
 import { ROLE_LABELS } from "@/lib/navigation";
@@ -6,7 +7,6 @@ import { pendingValidationCount } from "@/lib/queries/timesheets";
 import { Avatar } from "@/components/ui/avatar";
 import { LogoutForm } from "./logout-form";
 import { SidebarNav } from "./sidebar-nav";
-
 
 /** Partie de la sidebar qui dépend de la session (streamée derrière <Suspense>). */
 export async function SidebarContent() {
@@ -16,6 +16,8 @@ export async function SidebarContent() {
 
   async function logout() {
     "use server";
+    // Révoque toutes les sessions de l'utilisateur (le jeton JWT seul ne peut pas l'être).
+    await db.user.update({ where: { id: user.id }, data: { sessionVersion: { increment: 1 } } });
     await signOut({ redirectTo: "/login" });
   }
 

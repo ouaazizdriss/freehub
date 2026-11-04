@@ -1,5 +1,6 @@
 import "server-only";
 import nodemailer, { type Transporter } from "nodemailer";
+import { maskEmail } from "@/lib/security-log";
 
 /**
  * Notifications e-mail.
@@ -9,14 +10,27 @@ import nodemailer, { type Transporter } from "nodemailer";
  */
 let transporter: Transporter | null = null;
 
+/** SMTP_URL (smtp:// ou smtps://utilisateur:motdepasse@hôte:port) → options du transport. */
+function smtpOptions(raw: string) {
+  const url = new URL(raw);
+  const secure = url.protocol === "smtps:";
+  return {
+    host: url.hostname,
+    port: url.port ? Number(url.port) : secure ? 465 : 587,
+    secure,
+    // STARTTLS exigé sur le port de soumission : pas d'envoi en clair.
+    requireTLS: !secure,
+    auth: url.username ? { user: decodeURIComponent(url.username), pass: decodeURIComponent(url.password) } : undefined,
+    // Délais courts : un SMTP qui ne répond pas ne doit pas retenir le serveur.
+    connectionTimeout: 5_000,
+    greetingTimeout: 5_000,
+    socketTimeout: 10_000,
+  };
+}
+
 function getTransporter(): Transporter {
   transporter ??= process.env.SMTP_URL
-    ? nodemailer.createTransport(process.env.SMTP_URL, {
-        // Délais courts : un SMTP qui ne répond pas ne doit pas retenir le serveur.
-        connectionTimeout: 5_000,
-        greetingTimeout: 5_000,
-        socketTimeout: 10_000,
-      })
+    ? nodemailer.createTransport(smtpOptions(process.env.SMTP_URL))
     : nodemailer.createTransport({ jsonTransport: true });
   return transporter;
 }
@@ -32,6 +46,11 @@ const header = (s: string) => s.replace(/[\r\n]+/g, " ").trim();
 export type Mail = { to: string; subject: string; text: string };
 
 export async function sendMail(mail: Mail): Promise<boolean> {
+  // Production sans SMTP : échec explicite (pas de faux succès qui empêcherait les nouvelles tentatives).
+  if (!process.env.SMTP_URL && process.env.NODE_ENV === "production") {
+    console.error("[mail] SMTP_URL non configuré : message non envoyé", header(mail.subject));
+    return false;
+  }
   try {
     const info = await getTransporter().sendMail({
       from: process.env.MAIL_FROM ?? "Freelance Hub <no-reply@freelancehub.local>",
@@ -39,7 +58,8 @@ export async function sendMail(mail: Mail): Promise<boolean> {
       subject: header(mail.subject),
       text: mail.text,
     });
-    if (!process.env.SMTP_URL) console.info(`[mail] ${header(mail.subject)} → ${header(mail.to)}`, info.messageId ?? "");
+    if (!process.env.SMTP_URL)
+      console.info(`[mail] ${header(mail.subject)} → ${maskEmail(header(mail.to))}`, info.messageId ?? "");
     return true;
   } catch (e) {
     console.error("[mail] échec d'envoi", header(mail.subject), e instanceof Error ? e.message : e);
@@ -57,7 +77,14 @@ export function timesheetValidatedMail(p: { to: string; name: string; month: str
   };
 }
 
-export function timesheetRejectedMail(p: { to: string; name: string; month: string; mission: string; reason: string; decidedBy: string }): Mail {
+export function timesheetRejectedMail(p: {
+  to: string;
+  name: string;
+  month: string;
+  mission: string;
+  reason: string;
+  decidedBy: string;
+}): Mail {
   return {
     to: p.to,
     subject: `CRA ${p.month} : correction demandée`,
@@ -65,7 +92,13 @@ export function timesheetRejectedMail(p: { to: string; name: string; month: stri
   };
 }
 
-export function timesheetSubmittedMail(p: { to: string; managerName: string; freelancer: string; month: string; mission: string }): Mail {
+export function timesheetSubmittedMail(p: {
+  to: string;
+  managerName: string;
+  freelancer: string;
+  month: string;
+  mission: string;
+}): Mail {
   return {
     to: p.to,
     subject: `CRA ${p.month} de ${p.freelancer} à valider`,

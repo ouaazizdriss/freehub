@@ -9,7 +9,8 @@ import "dotenv/config";
 import { readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client";
+import { Prisma, PrismaClient } from "../src/generated/prisma/client";
+import { isStorageKey } from "../src/lib/storage-keys";
 
 export const RETENTION = {
   /**
@@ -82,7 +83,9 @@ async function main() {
     where: { createdAt: { lt: downloadCutoff }, action: { in: ["PDF_DOWNLOAD", "XLSX_DOWNLOAD", "MONTHLY_XLSX"] } },
   });
   report["Relances de plus d'un an"] = await db.reminderLog.count({ where: { sentAt: { lt: downloadCutoff } } });
-  report["Absences terminées depuis plus de 3 ans"] = await db.absence.count({ where: { endDate: { lt: ago(RETENTION.absenceYears) } } });
+  report["Absences terminées depuis plus de 3 ans"] = await db.absence.count({
+    where: { endDate: { lt: ago(RETENTION.absenceYears) } },
+  });
   report["Pièces expirées depuis plus de 5 ans"] = oldDocuments.length;
   report["Comptes désactivés à anonymiser"] = inactive.length;
 
@@ -118,20 +121,36 @@ async function main() {
     // Conditions relues dans la transaction : un compte réactivé entre-temps n'est pas anonymisé.
     for (const f of await tx.freelancer.findMany({ where: inactiveWhere, select: { id: true, userId: true } })) {
       // Les CRA conservés gardent leur instantané (noms figés à la soumission).
-      await tx.user.update({ where: { id: f.userId }, data: { name: "Ancien freelance", email: `anonyme+${f.userId}@anonyme.invalid` } });
+      await tx.user.update({
+        where: { id: f.userId },
+        data: {
+          name: "Ancien freelance",
+          email: `anonyme+${f.userId}@anonyme.invalid`,
+          entraOid: null,
+          sessionVersion: { increment: 1 },
+        },
+      });
+      // Texte libre et e-mail conservés ailleurs : effacés aussi (les commentaires ne font pas partie du
+      // contenu scellé des CRA, leur suppression ne change pas la vérification des documents).
+      await tx.timesheetDay.updateMany({ where: { timesheet: { freelancerId: f.id } }, data: { comment: null } });
+      await tx.auditLog.updateMany({ where: { entity: "Freelancer", entityId: f.id }, data: { payload: Prisma.DbNull } });
       await tx.freelancer.update({ where: { id: f.id }, data: { company: null, siret: null, jobTitle: "—" } });
       await tx.absence.updateMany({ where: { freelancerId: f.id }, data: { comment: null } });
       const signature = await tx.signature.findUnique({ where: { freelancerId: f.id }, select: { fileKey: true } });
       await tx.signature.deleteMany({ where: { freelancerId: f.id } });
       // Fichier supprimé seulement s'il n'est figé sur aucun CRA conservé.
-      if (signature && (await tx.timesheet.count({ where: { signatureKey: signature.fileKey } })) === 0) filesToRemove.push(signature.fileKey);
+      if (signature && (await tx.timesheet.count({ where: { signatureKey: signature.fileKey } })) === 0)
+        filesToRemove.push(signature.fileKey);
       const docs = await tx.freelancerDocument.findMany({ where: { freelancerId: f.id }, select: { fileKey: true } });
       await tx.freelancerDocument.deleteMany({ where: { freelancerId: f.id } });
       filesToRemove.push(...docs.flatMap((d) => (d.fileKey ? [d.fileKey] : [])));
     }
   });
   // Après validation en base ; un échec de suppression est rattrapé au prochain passage (fichiers orphelins).
-  for (const key of [...filesToRemove, ...orphans]) await rm(path.join(STORAGE, key), { force: true });
+  for (const key of [...filesToRemove, ...orphans]) {
+    // Même contrôle que le stockage applicatif : aucune clé hors format ne sort du dossier.
+    if (isStorageKey(key)) await rm(path.join(STORAGE, key), { force: true });
+  }
   console.log("Purge appliquée.");
 }
 
@@ -139,8 +158,12 @@ async function main() {
 async function orphanFiles(): Promise<string[]> {
   const referenced = new Set<string>([
     ...(await db.signature.findMany({ select: { fileKey: true } })).map((s) => s.fileKey),
-    ...(await db.timesheet.findMany({ where: { signatureKey: { not: null } }, select: { signatureKey: true } })).map((t) => t.signatureKey!),
-    ...(await db.freelancerDocument.findMany({ where: { fileKey: { not: null } }, select: { fileKey: true } })).map((d) => d.fileKey!),
+    ...(await db.timesheet.findMany({ where: { signatureKey: { not: null } }, select: { signatureKey: true } })).map(
+      (t) => t.signatureKey!,
+    ),
+    ...(await db.freelancerDocument.findMany({ where: { fileKey: { not: null } }, select: { fileKey: true } })).map(
+      (d) => d.fileKey!,
+    ),
   ]);
   const orphans: string[] = [];
   for (const folder of ["signatures", "documents"]) {

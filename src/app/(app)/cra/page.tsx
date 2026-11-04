@@ -40,7 +40,11 @@ async function CraContent({ searchParams }: { searchParams: SearchParams }) {
       {!data ? (
         <Empty>Votre compte n&apos;est rattaché à aucune fiche freelance. Contactez votre administrateur.</Empty>
       ) : data.editor ? (
-        <CraEditor key={`${data.editor.poId}-${year}-${month1}-${data.editor.status}`} data={{ ...data, editor: data.editor }} today={today} />
+        <CraEditor
+          key={`${data.editor.poId}-${year}-${month1}-${data.editor.status}`}
+          data={{ ...data, editor: data.editor }}
+          today={today}
+        />
       ) : (
         <Empty>
           Aucun contrat actif en {formatMonth(year, month1)}.{" "}
@@ -94,7 +98,9 @@ function parseMonth(value: string | undefined, today: string) {
 }
 
 function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="mt-6 rounded-card border border-line bg-surface p-6 text-[13.5px] text-ink-muted shadow-card">{children}</p>;
+  return (
+    <p className="mt-6 rounded-card border border-line bg-surface p-6 text-[13.5px] text-ink-muted shadow-card">{children}</p>
+  );
 }
 
 function TimesheetTable({
@@ -112,7 +118,10 @@ function TimesheetTable({
 }) {
   const th = "px-3 py-2.5";
   return (
-    <section aria-labelledby="historique-titre" className="mt-6 overflow-hidden rounded-card border border-line bg-surface shadow-card">
+    <section
+      aria-labelledby="historique-titre"
+      className="mt-6 overflow-hidden rounded-card border border-line bg-surface shadow-card"
+    >
       <h2 id="historique-titre" className="px-5 pt-4 pb-3 text-[15.5px] font-bold">
         {title}
       </h2>
@@ -165,7 +174,10 @@ function TimesheetTable({
                   <tr key={r.id} className="border-t border-line-faint">
                     <td className="px-5 py-3 font-semibold capitalize">
                       {linkRows ? (
-                        <Link href={craHref(isoDate(y, m, 1).slice(0, 7), r.purchaseOrderId)} className="text-purple underline-offset-2 hover:underline">
+                        <Link
+                          href={craHref(isoDate(y, m, 1).slice(0, 7), r.purchaseOrderId)}
+                          className="text-purple underline-offset-2 hover:underline"
+                        >
                           {label}
                         </Link>
                       ) : (
@@ -187,14 +199,18 @@ function TimesheetTable({
                     {documents ? (
                       <td className="px-5 py-3">
                         {r.status === "DRAFT" ? null : (
-                        <a
-                          href={`/api/cra/${encodeURIComponent(r.id)}/pdf`}
-                          target="_blank"
-                          rel="noopener"
-                          className="font-semibold text-purple underline-offset-2 hover:underline"
-                        >
-                          PDF<span className="sr-only"> du CRA de {r.freelancer.user.name}, {label} (nouvel onglet)</span>
-                        </a>
+                          <a
+                            href={`/api/cra/${encodeURIComponent(r.id)}/pdf`}
+                            target="_blank"
+                            rel="noopener"
+                            className="font-semibold text-purple underline-offset-2 hover:underline"
+                          >
+                            PDF
+                            <span className="sr-only">
+                              {" "}
+                              du CRA de {r.freelancer.user.name}, {label} (nouvel onglet)
+                            </span>
+                          </a>
                         )}
                       </td>
                     ) : null}

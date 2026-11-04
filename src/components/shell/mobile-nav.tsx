@@ -12,7 +12,10 @@ export function MobileNav({ brand, children }: { brand: React.ReactNode; childre
   const dialog = useRef<HTMLDialogElement>(null);
 
   return (
-    <div data-noprint className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-2 md:hidden">
+    <div
+      data-noprint
+      className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-surface px-4 py-2 md:hidden"
+    >
       {brand}
       {/* Lecture de l'URL sous Suspense : le cadre de la page reste prérendu (Cache Components). */}
       <Suspense fallback={null}>

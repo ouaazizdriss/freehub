@@ -7,6 +7,8 @@ import { reminderMail, sendMail } from "@/lib/notify";
 import { fromIso } from "@/lib/queries/cra-editor";
 import { expectedTimesheets } from "@/lib/queries/referential";
 import { Prisma } from "@/generated/prisma/client";
+import { securityEvent } from "@/lib/security-log";
+import { isCalendarDate } from "@/lib/validation";
 
 /**
  * Relances automatiques (à appeler une fois par jour par un planificateur : cron, Azure Logic App…).
@@ -25,12 +27,15 @@ function authorized(request: Request): boolean {
 
 export async function POST(request: Request) {
   await connection();
-  if (!authorized(request)) return new Response("Non autorisé", { status: 401 });
+  if (!authorized(request)) {
+    await securityEvent("CRON_UNAUTHORIZED", { ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null });
+    return new Response("Non autorisé", { status: 401 });
+  }
 
   const url = new URL(request.url);
   // ?date=AAAA-MM-JJ : rejouer une journée (tests, rattrapage) ; sinon aujourd'hui.
   const forced = url.searchParams.get("date");
-  const today = forced && /^\d{4}-\d{2}-\d{2}$/.test(forced) ? forced : todayIso();
+  const today = forced && isCalendarDate(forced) ? forced : todayIso();
   // Période dont l'échéance tombe dans 3 jours (période en cours), ou a expiré hier (période précédente).
   const candidates = [closingPeriod(today), closingPeriod(isoDate(Number(today.slice(0, 4)), Number(today.slice(5, 7)), 1))];
   const target = candidates.map((p) => ({ ...p, kind: reminderFor(today, p.deadline) })).find((p) => p.kind);

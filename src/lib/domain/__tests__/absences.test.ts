@@ -35,8 +35,18 @@ describe("missionCapacity", () => {
           id: "m",
           name: "Refonte CRM",
           members: [
-            { freelancerId: "a", name: "Camille", periods: [{ start: "2026-11-01", end: "2026-11-30" }], absences: [{ start: "2026-11-09", end: "2026-11-13" }] },
-            { freelancerId: "b", name: "Yanis", periods: [{ start: "2026-11-01", end: "2026-11-30" }], absences: [{ start: "2026-11-12", end: "2026-11-12" }] },
+            {
+              freelancerId: "a",
+              name: "Camille",
+              periods: [{ start: "2026-11-01", end: "2026-11-30" }],
+              absences: [{ start: "2026-11-09", end: "2026-11-13" }],
+            },
+            {
+              freelancerId: "b",
+              name: "Yanis",
+              periods: [{ start: "2026-11-01", end: "2026-11-30" }],
+              absences: [{ start: "2026-11-12", end: "2026-11-12" }],
+            },
           ],
         },
       ],
@@ -58,8 +68,18 @@ describe("missionCapacity", () => {
           name: "M",
           members: [
             // Contrat jusqu'au 10 ; congé du 20 au 24 → hors mission, ne compte pas
-            { freelancerId: "a", name: "A", periods: [{ start: "2026-11-01", end: "2026-11-10" }], absences: [{ start: "2026-11-20", end: "2026-11-24" }] },
-            { freelancerId: "b", name: "B", periods: [{ start: "2026-11-01", end: "2026-11-30" }], absences: [{ start: "2026-11-20", end: "2026-11-20" }] },
+            {
+              freelancerId: "a",
+              name: "A",
+              periods: [{ start: "2026-11-01", end: "2026-11-10" }],
+              absences: [{ start: "2026-11-20", end: "2026-11-24" }],
+            },
+            {
+              freelancerId: "b",
+              name: "B",
+              periods: [{ start: "2026-11-01", end: "2026-11-30" }],
+              absences: [{ start: "2026-11-20", end: "2026-11-20" }],
+            },
           ],
         },
       ],

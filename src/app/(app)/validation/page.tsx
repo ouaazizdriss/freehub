@@ -64,7 +64,9 @@ async function ValidationContent({ searchParams }: { searchParams: SearchParams 
             href={validationHref(f)}
             aria-current={f === filter ? "page" : undefined}
             className={`flex min-h-11 items-center gap-2 rounded-pill border px-4 text-[12.5px] font-semibold ${
-              f === filter ? "border-purple bg-purple text-white" : "border-line-strong bg-surface text-ink-3 hover:bg-surface-soft"
+              f === filter
+                ? "border-purple bg-purple text-white"
+                : "border-line-strong bg-surface text-ink-3 hover:bg-surface-soft"
             }`}
           >
             {QUEUE_FILTERS[f].label}
@@ -79,7 +81,9 @@ async function ValidationContent({ searchParams }: { searchParams: SearchParams 
             <h2 id="file-titre" className="text-[15.5px] font-bold">
               {QUEUE_FILTERS[filter].label}
             </h2>
-            <span className="rounded-pill bg-pink-ink px-2 py-0.5 text-[11px] font-bold text-white tabular-nums">{counts[filter]}</span>
+            <span className="rounded-pill bg-pink-ink px-2 py-0.5 text-[11px] font-bold text-white tabular-nums">
+              {counts[filter]}
+            </span>
             {counts[filter] > rows.length ? (
               <span className="text-[12px] text-ink-subtle">
                 {rows.length} premiers affichés sur {counts[filter]}
@@ -157,7 +161,10 @@ function QueueTable({ rows, filter, selectedId }: { rows: QueueRow[]; filter: Qu
             const selected = r.id === selectedId;
             const name = r.freelancer.user.name;
             return (
-              <tr key={r.id} className={`relative border-t border-line-faint ${selected ? "bg-lavender-light" : "hover:bg-surface-soft"}`}>
+              <tr
+                key={r.id}
+                className={`relative border-t border-line-faint ${selected ? "bg-lavender-light" : "hover:bg-surface-soft"}`}
+              >
                 <td className="px-5 py-2.5">
                   <Link
                     href={validationHref(filter, r.id)}

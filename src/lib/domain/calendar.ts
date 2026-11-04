@@ -99,5 +99,7 @@ export const BUSINESS_TIME_ZONE = "Africa/Casablanca";
  * différer (cas du Maroc), ce qui casserait l'hydratation.
  */
 export function formatDateTime(date: Date | string, style: "short" | "long" = "short"): string {
-  return new Intl.DateTimeFormat("fr-FR", { dateStyle: style, timeStyle: "short", timeZone: BUSINESS_TIME_ZONE }).format(new Date(date));
+  return new Intl.DateTimeFormat("fr-FR", { dateStyle: style, timeStyle: "short", timeZone: BUSINESS_TIME_ZONE }).format(
+    new Date(date),
+  );
 }

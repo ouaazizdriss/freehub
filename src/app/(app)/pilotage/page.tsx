@@ -43,8 +43,16 @@ async function Content() {
   const canOpenReferential = ROUTES.freelances.roles.includes(user.role);
 
   const kpis = [
-    { label: "Freelances actifs", value: String(d.kpis.activeFreelancers), hint: `${d.kpis.activeMissions} mission${d.kpis.activeMissions > 1 ? "s" : ""} en cours` },
-    { label: "Jours facturés", value: `${formatDays(d.kpis.billedHalfDays)} j`, hint: `${d.period.label}, CRA soumis ou validés` },
+    {
+      label: "Freelances actifs",
+      value: String(d.kpis.activeFreelancers),
+      hint: `${d.kpis.activeMissions} mission${d.kpis.activeMissions > 1 ? "s" : ""} en cours`,
+    },
+    {
+      label: "Jours facturés",
+      value: `${formatDays(d.kpis.billedHalfDays)} j`,
+      hint: `${d.period.label}, CRA soumis ou validés`,
+    },
     {
       label: "Budget consommé",
       value: `${Math.round(budgetRatio * 100)} %`,
@@ -68,7 +76,11 @@ async function Content() {
         {kpis.map((k) => (
           <div key={k.label} className={card}>
             <p className="text-[11.5px] font-semibold text-ink-subtle">{k.label}</p>
-            <p className={`mt-1 text-[29px] leading-tight font-bold tracking-[-0.02em] tabular-nums ${"danger" in k && k.danger ? "text-danger" : ""}`}>{k.value}</p>
+            <p
+              className={`mt-1 text-[29px] leading-tight font-bold tracking-[-0.02em] tabular-nums ${"danger" in k && k.danger ? "text-danger" : ""}`}
+            >
+              {k.value}
+            </p>
             <p className="text-[11.5px] text-ink-subtle">{k.hint}</p>
             {"bar" in k && k.bar !== undefined ? (
               <div className="mt-2">
@@ -85,7 +97,10 @@ async function Content() {
             <h2 id="conso" className="text-[15.5px] font-bold">
               Consommé vs budget par mission
             </h2>
-            <a href={`/api/exports/monthly?mois=${monthKey}`} className="text-[12.5px] font-semibold text-purple underline-offset-2 hover:underline">
+            <a
+              href={`/api/exports/monthly?mois=${monthKey}`}
+              className="text-[12.5px] font-semibold text-purple underline-offset-2 hover:underline"
+            >
               Export Excel {d.period.label}
             </a>
           </div>

@@ -55,6 +55,12 @@ model User {
   active    Boolean  @default(true)
   /// Date de désactivation (départ) : point de départ de l'anonymisation RGPD
   deactivatedAt DateTime?
+  /// Identifiant immuable de l'utilisateur dans Entra ID (claim `oid`), lié à la première connexion SSO.
+  /// Les connexions suivantes sont reconnues par cet identifiant, jamais par l'e-mail (anti-nOAuth).
+  entraOid      String?   @unique
+  /// Version de session : incrémentée à la déconnexion, au changement de rôle ou à la désactivation ;
+  /// toute session émise avec une version antérieure est refusée (révocation des jetons JWT).
+  sessionVersion Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -282,4 +288,14 @@ model ReminderLog {
   sentAt       DateTime @default(now())
 
   @@unique([freelancerId, month, kind])
+}
+
+/// Limitation de débit (fenêtre fixe) : une ligne par clé (utilisateur ou IP + action) et fenêtre.
+model RateLimit {
+  key         String
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@id([key, windowStart])
+  @@index([windowStart])
 }

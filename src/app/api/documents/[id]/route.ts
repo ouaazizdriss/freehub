@@ -6,8 +6,8 @@ import { getFile } from "@/lib/storage";
 const ALLOWED = new Set(["application/pdf", "image/png", "image/jpeg"]);
 
 /** Téléchargement d'une pièce justificative : le freelance titulaire, l'admin, ou un manager de son périmètre. */
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const user = await authorize(["FREELANCE", "MANAGER", "ADMIN"]);
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const user = await authorize(["FREELANCE", "MANAGER", "ADMIN"], request);
   if (user instanceof Response) return user;
   const { id } = await params;
   const doc = await db.freelancerDocument.findFirst({

@@ -54,10 +54,18 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="mt-5 flex flex-col gap-4">
       <nav aria-label="Vue" className="flex flex-wrap items-center gap-2">
-        <Link href="/freelances" aria-current={view === "freelances" ? "page" : undefined} className={chip(view === "freelances")}>
+        <Link
+          href="/freelances"
+          aria-current={view === "freelances" ? "page" : undefined}
+          className={chip(view === "freelances")}
+        >
           Freelances
         </Link>
-        <Link href="/freelances?vue=missions" aria-current={view === "missions" ? "page" : undefined} className={chip(view === "missions")}>
+        <Link
+          href="/freelances?vue=missions"
+          aria-current={view === "missions" ? "page" : undefined}
+          className={chip(view === "missions")}
+        >
           Missions &amp; bons de commande
         </Link>
         {editor && view === "freelances" ? (
@@ -78,7 +86,15 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
-async function FreelancerList({ user, filter: rawFilter, q }: { user: Awaited<ReturnType<typeof requireRole>>; filter?: string; q?: string }) {
+async function FreelancerList({
+  user,
+  filter: rawFilter,
+  q,
+}: {
+  user: Awaited<ReturnType<typeof requireRole>>;
+  filter?: string;
+  q?: string;
+}) {
   const filter: Filter = rawFilter && Object.hasOwn(FILTERS, rawFilter) ? (rawFilter as Filter) : "ALL";
   const rows = await listFreelancers(user, todayIso());
   const query = (q ?? "").trim().toLowerCase().slice(0, 80);
@@ -97,7 +113,12 @@ async function FreelancerList({ user, filter: rawFilter, q }: { user: Awaited<Re
         </h2>
         <nav aria-label="Filtres" className="flex flex-wrap gap-1.5">
           {(Object.keys(FILTERS) as Filter[]).map((f) => (
-            <Link key={f} href={href(f)} aria-current={f === filter ? "true" : undefined} className={chip(f === filter).replace("px-4", "px-3")}>
+            <Link
+              key={f}
+              href={href(f)}
+              aria-current={f === filter ? "true" : undefined}
+              className={chip(f === filter).replace("px-4", "px-3")}
+            >
               {FILTERS[f].label}
             </Link>
           ))}
@@ -115,7 +136,11 @@ async function FreelancerList({ user, filter: rawFilter, q }: { user: Awaited<Re
             placeholder="Rechercher…"
             className="min-h-11 w-52 rounded-control border border-line-strong px-3 text-[13px]"
           />
-          <button type="submit" aria-label="Rechercher" className="grid size-11 place-items-center rounded-control border border-line-strong">
+          <button
+            type="submit"
+            aria-label="Rechercher"
+            className="grid size-11 place-items-center rounded-control border border-line-strong"
+          >
             <Search aria-hidden className="size-4" />
           </button>
         </form>
@@ -168,12 +193,15 @@ async function FreelancerList({ user, filter: rawFilter, q }: { user: Awaited<Re
                       {r.missionName ?? "—"}
                       {r.poNumber ? <span className="block text-xs text-ink-subtle">{r.poNumber}</span> : null}
                     </td>
-                    <td className="px-3 py-2.5 text-right">{r.dailyRateCents != null ? formatEur(r.dailyRateCents, r.currency) : "—"}</td>
+                    <td className="px-3 py-2.5 text-right">
+                      {r.dailyRateCents != null ? formatEur(r.dailyRateCents, r.currency) : "—"}
+                    </td>
                     <td className="px-3 py-2.5">
                       {health ? (
                         <div className="flex flex-col gap-1">
                           <span className="text-[12px]">
-                            {formatDays(r.poConsumedHalfDays ?? 0)} / {formatDays(r.poBudgetHalfDays!)} j ({Math.round(health.ratio * 100)} %)
+                            {formatDays(r.poConsumedHalfDays ?? 0)} / {formatDays(r.poBudgetHalfDays!)} j (
+                            {Math.round(health.ratio * 100)} %)
                           </span>
                           <ConsumptionBar ratio={health.ratio} level={health.level} />
                         </div>
@@ -227,17 +255,23 @@ async function MissionList({ user, editor }: { user: Awaited<ReturnType<typeof r
       ) : null}
 
       {missions.length === 0 ? (
-        <p className="rounded-card border border-line bg-surface p-6 text-[13.5px] text-ink-muted shadow-card">Aucune mission dans votre périmètre.</p>
+        <p className="rounded-card border border-line bg-surface p-6 text-[13.5px] text-ink-muted shadow-card">
+          Aucune mission dans votre périmètre.
+        </p>
       ) : (
         missions.map((m) => (
-          <section key={m.id} aria-labelledby={`mission-${m.id}`} className="rounded-card border border-line bg-surface p-5 shadow-card">
+          <section
+            key={m.id}
+            aria-labelledby={`mission-${m.id}`}
+            className="rounded-card border border-line bg-surface p-5 shadow-card"
+          >
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 id={`mission-${m.id}`} className="text-[15.5px] font-bold">
                 {m.name}
               </h2>
               <p className="text-[12px] text-ink-subtle">
-                {m.manager.name} · {m.country === "MA" ? "Maroc" : "France"} · {formatIsoDate(m.startDate)} → {formatIsoDate(m.endDate)} ·{" "}
-                {m._count.contracts} contrat{m._count.contracts > 1 ? "s" : ""}
+                {m.manager.name} · {m.country === "MA" ? "Maroc" : "France"} · {formatIsoDate(m.startDate)} →{" "}
+                {formatIsoDate(m.endDate)} · {m._count.contracts} contrat{m._count.contracts > 1 ? "s" : ""}
               </p>
             </div>
             <ul className="mt-3 flex flex-col gap-2.5">
@@ -248,7 +282,10 @@ async function MissionList({ user, editor }: { user: Awaited<ReturnType<typeof r
                   <li key={p.id} className="flex flex-col gap-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-2 text-[13px]">
                       <span className="font-semibold">
-                        {p.number} <span className="font-normal text-ink-subtle">· {formatIsoDate(p.startDate)} → {formatIsoDate(p.endDate)}</span>
+                        {p.number}{" "}
+                        <span className="font-normal text-ink-subtle">
+                          · {formatIsoDate(p.startDate)} → {formatIsoDate(p.endDate)}
+                        </span>
                       </span>
                       <span className="tabular-nums">
                         {formatDays(p.consumedHalfDays)} / {formatDays(p.budgetHalfDays)} j ({Math.round(h.ratio * 100)} %)

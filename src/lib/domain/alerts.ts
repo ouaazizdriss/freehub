@@ -46,7 +46,10 @@ export type DocumentState = "missing" | "expired" | "expiring" | "ok";
 export type DocumentInput = { kind: DocumentKind; expiresAt: IsoDate | null };
 
 /** État de chaque pièce obligatoire (la plus récente expiration fait foi). */
-export function documentStates(docs: readonly DocumentInput[], today: IsoDate): Record<(typeof REQUIRED_DOCUMENTS)[number], DocumentState> {
+export function documentStates(
+  docs: readonly DocumentInput[],
+  today: IsoDate,
+): Record<(typeof REQUIRED_DOCUMENTS)[number], DocumentState> {
   const result = {} as Record<(typeof REQUIRED_DOCUMENTS)[number], DocumentState>;
   for (const kind of REQUIRED_DOCUMENTS) {
     const ofKind = docs.filter((d) => d.kind === kind);
@@ -59,7 +62,10 @@ export function documentStates(docs: readonly DocumentInput[], today: IsoDate): 
       result[kind] = "ok";
       continue;
     }
-    const latest = ofKind.map((d) => d.expiresAt!).sort().at(-1)!;
+    const latest = ofKind
+      .map((d) => d.expiresAt!)
+      .sort()
+      .at(-1)!;
     const left = daysBetween(today, latest);
     result[kind] = left < 0 ? "expired" : left <= ALERT_THRESHOLDS.documentExpiringDays ? "expiring" : "ok";
   }
@@ -113,7 +119,8 @@ export type AlertInput = {
 };
 
 const LEVEL_ORDER: Record<AlertLevel, number> = { danger: 0, warning: 1, info: 2 };
-const list = (names: string[], max = 3) => (names.length <= max ? names.join(", ") : `${names.slice(0, max).join(", ")} et ${names.length - max} autre(s)`);
+const list = (names: string[], max = 3) =>
+  names.length <= max ? names.join(", ") : `${names.slice(0, max).join(", ")} et ${names.length - max} autre(s)`;
 
 export function buildAlerts(input: AlertInput): Alert[] {
   const alerts: Alert[] = [];
@@ -153,9 +160,7 @@ export function buildAlerts(input: AlertInput): Alert[] {
       href: "/freelances?filtre=DOCS_KO",
     });
   }
-  const expiring = input.documents.filter(
-    (d) => !expired.includes(d) && Object.values(d.states).some((s) => s === "expiring"),
-  );
+  const expiring = input.documents.filter((d) => !expired.includes(d) && Object.values(d.states).some((s) => s === "expiring"));
   if (expiring.length > 0) {
     alerts.push({
       level: "info",

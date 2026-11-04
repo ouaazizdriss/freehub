@@ -11,16 +11,38 @@ import {
 } from "@/app/(app)/freelances/actions";
 import { ActionForm, Field } from "@/components/forms/action-form";
 
-type Profile = { id?: string; name: string; email: string; jobTitle: string | null; company: string | null; siret: string | null };
+type Profile = {
+  id?: string;
+  name: string;
+  email: string;
+  jobTitle: string | null;
+  company: string | null;
+  siret: string | null;
+};
 
 function ProfileFields({ profile }: { profile?: Profile }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       <Field name="name" label="Nom complet" required defaultValue={profile?.name} maxLength={120} autoComplete="off" />
-      <Field name="email" label="E-mail (connexion SSO)" type="email" required defaultValue={profile?.email} maxLength={200} autoComplete="off" />
+      <Field
+        name="email"
+        label="E-mail (connexion SSO)"
+        type="email"
+        required
+        defaultValue={profile?.email}
+        maxLength={200}
+        autoComplete="off"
+      />
       <Field name="jobTitle" label="Intitulé du poste" required defaultValue={profile?.jobTitle} maxLength={120} />
       <Field name="company" label="Société (portage, EURL…)" defaultValue={profile?.company} maxLength={160} />
-      <Field name="siret" label="SIRET" defaultValue={profile?.siret} inputMode="numeric" maxLength={14} hint="14 chiffres, facultatif" />
+      <Field
+        name="siret"
+        label="SIRET"
+        defaultValue={profile?.siret}
+        inputMode="numeric"
+        maxLength={14}
+        hint="14 chiffres, facultatif"
+      />
     </div>
   );
 }
@@ -28,7 +50,11 @@ function ProfileFields({ profile }: { profile?: Profile }) {
 export function NewFreelancerForm() {
   const router = useRouter();
   return (
-    <ActionForm action={createFreelancer} submitLabel="Créer le freelance" onSuccess={(s) => s.id && router.push(`/freelances/${s.id}`)}>
+    <ActionForm
+      action={createFreelancer}
+      submitLabel="Créer le freelance"
+      onSuccess={(s) => s.id && router.push(`/freelances/${s.id}`)}
+    >
       <ProfileFields />
     </ActionForm>
   );
@@ -57,7 +83,13 @@ export function ActivationForm({ id, active }: { id: string; active: boolean }) 
   );
 }
 
-export function NewContractForm({ freelancerId, missions }: { freelancerId: string; missions: { id: string; name: string; start: string; end: string }[] }) {
+export function NewContractForm({
+  freelancerId,
+  missions,
+}: {
+  freelancerId: string;
+  missions: { id: string; name: string; start: string; end: string }[];
+}) {
   return (
     <ActionForm action={createContract} submitLabel="Créer le contrat" resetOnSuccess>
       <input type="hidden" name="freelancerId" value={freelancerId} />
@@ -87,19 +119,52 @@ export function NewContractForm({ freelancerId, missions }: { freelancerId: stri
 export function EditContractForm({
   contract,
 }: {
-  contract: { id: string; endDate: string; dailyRateCents: number; overtimeHourlyRateCents: number; onCallRateCents: number; locked: boolean };
+  contract: {
+    id: string;
+    endDate: string;
+    dailyRateCents: number;
+    overtimeHourlyRateCents: number;
+    onCallRateCents: number;
+    locked: boolean;
+  };
 }) {
   return (
     <ActionForm action={updateContract} submitLabel="Enregistrer le contrat">
       <input type="hidden" name="id" value={contract.id} />
       <div className="grid gap-3 sm:grid-cols-4">
         <Field name="endDate" label="Fin" type="date" required defaultValue={contract.endDate} />
-        <Field name="dailyRate" label="TJM" type="number" required step={0.01} defaultValue={contract.dailyRateCents / 100} readOnly={contract.locked} />
-        <Field name="overtimeRate" label="Heure sup." type="number" required step={0.01} defaultValue={contract.overtimeHourlyRateCents / 100} readOnly={contract.locked} />
-        <Field name="onCallRate" label="Astreinte" type="number" required step={0.01} defaultValue={contract.onCallRateCents / 100} readOnly={contract.locked} />
+        <Field
+          name="dailyRate"
+          label="TJM"
+          type="number"
+          required
+          step={0.01}
+          defaultValue={contract.dailyRateCents / 100}
+          readOnly={contract.locked}
+        />
+        <Field
+          name="overtimeRate"
+          label="Heure sup."
+          type="number"
+          required
+          step={0.01}
+          defaultValue={contract.overtimeHourlyRateCents / 100}
+          readOnly={contract.locked}
+        />
+        <Field
+          name="onCallRate"
+          label="Astreinte"
+          type="number"
+          required
+          step={0.01}
+          defaultValue={contract.onCallRateCents / 100}
+          readOnly={contract.locked}
+        />
       </div>
       {contract.locked ? (
-        <p className="text-[11.5px] text-ink-subtle">Taux figés : des CRA ont été soumis sur ce contrat. Pour un nouveau taux, créez un contrat (avenant).</p>
+        <p className="text-[11.5px] text-ink-subtle">
+          Taux figés : des CRA ont été soumis sur ce contrat. Pour un nouveau taux, créez un contrat (avenant).
+        </p>
       ) : null}
     </ActionForm>
   );

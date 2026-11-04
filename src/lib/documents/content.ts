@@ -17,9 +17,7 @@ const FROZEN: TimesheetStatus[] = ["SUBMITTED", "VALIDATED"];
  * (jamais un brouillon en cours de saisie).
  */
 export function documentScope(user: CurrentUser): Prisma.TimesheetWhereInput {
-  return user.role === "FREELANCE"
-    ? { freelancer: { userId: user.id } }
-    : { ...timesheetScope(user), status: { not: "DRAFT" } };
+  return user.role === "FREELANCE" ? { freelancer: { userId: user.id } } : { ...timesheetScope(user), status: { not: "DRAFT" } };
 }
 
 const DOCUMENT_SELECT = {
@@ -44,7 +42,9 @@ const DOCUMENT_SELECT = {
   freelancer: {
     select: { company: true, user: { select: { name: true } }, signature: { select: { fileKey: true } } },
   },
-  purchaseOrder: { select: { number: true, mission: { select: { name: true, country: true, manager: { select: { name: true } } } } } },
+  purchaseOrder: {
+    select: { number: true, mission: { select: { name: true, country: true, manager: { select: { name: true } } } } },
+  },
   days: { orderBy: { date: "asc" }, select: DAY_SELECT },
 } satisfies Prisma.TimesheetSelect;
 
@@ -180,7 +180,13 @@ export function canonicalContent(doc: TimesheetDocument): string {
     po: doc.poNumber,
     currency: doc.currency,
     rates: [doc.rates.dailyRateCents, doc.rates.overtimeHourlyRateCents, doc.rates.onCallRateCents],
-    totals: [doc.totals.workHalfDays, doc.totals.absenceHalfDays, doc.totals.overtimeHours, doc.totals.onCall, doc.totals.amountCents],
+    totals: [
+      doc.totals.workHalfDays,
+      doc.totals.absenceHalfDays,
+      doc.totals.overtimeHours,
+      doc.totals.onCall,
+      doc.totals.amountCents,
+    ],
     days: doc.days.map((d) => [d.date, d.workHalfDays, d.absenceHalfDays, d.half, d.overtimeHours, d.onCall, d.exceptionReason]),
     signature: [doc.signatureKey, doc.signatureHash],
     validated: doc.status === "VALIDATED" ? [doc.validatedAt?.toISOString() ?? null, doc.validatedByName ?? null] : null,
@@ -209,7 +215,10 @@ export async function sealTimesheet(tx: Prisma.TransactionClient, id: string, op
 
   // Figeage : à la soumission (pas encore d'instantané) ; à la validation, ajout du validateur.
   const base = asSnapshot(row.snapshot) ?? (await liveSnapshot(row, row.signatureKey));
-  const snapshot: DocumentSnapshot = { ...base, validatedByName: row.status === "VALIDATED" ? (row.validatedBy?.name ?? null) : null };
+  const snapshot: DocumentSnapshot = {
+    ...base,
+    validatedByName: row.status === "VALIDATED" ? (row.validatedBy?.name ?? null) : null,
+  };
   const doc = await toDocument({ ...row, snapshot: snapshot as unknown as Prisma.JsonValue }, tx);
   const { code, contentHash } = expectedAuthCode(doc);
   await tx.timesheet.update({

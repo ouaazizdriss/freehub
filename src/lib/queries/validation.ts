@@ -165,7 +165,9 @@ export async function getValidationDetail(user: CurrentUser, id: string) {
 }
 
 function reasonOf(payload: unknown): string | null {
-  return payload && typeof payload === "object" && "reason" in payload && typeof payload.reason === "string" ? payload.reason : null;
+  return payload && typeof payload === "object" && "reason" in payload && typeof payload.reason === "string"
+    ? payload.reason
+    : null;
 }
 
 export type ValidationDetail = NonNullable<Awaited<ReturnType<typeof getValidationDetail>>>;

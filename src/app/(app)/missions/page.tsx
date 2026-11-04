@@ -34,7 +34,10 @@ async function Content() {
     where: { userId: user.id },
     select: {
       id: true,
-      documents: { orderBy: { uploadedAt: "desc" }, select: { id: true, kind: true, expiresAt: true, fileName: true, fileKey: true } },
+      documents: {
+        orderBy: { uploadedAt: "desc" },
+        select: { id: true, kind: true, expiresAt: true, fileName: true, fileKey: true },
+      },
       contracts: {
         orderBy: { startDate: "desc" },
         select: {
@@ -49,14 +52,20 @@ async function Content() {
             select: {
               name: true,
               manager: { select: { name: true } },
-              purchaseOrders: { orderBy: { endDate: "desc" }, select: { id: true, number: true, budgetHalfDays: true, endDate: true } },
+              purchaseOrders: {
+                orderBy: { endDate: "desc" },
+                select: { id: true, number: true, budgetHalfDays: true, endDate: true },
+              },
             },
           },
         },
       },
     },
   });
-  if (!freelancer) return <p className={`mt-6 ${card} text-[13.5px] text-ink-muted`}>Aucune fiche freelance n&apos;est rattachée à votre compte.</p>;
+  if (!freelancer)
+    return (
+      <p className={`mt-6 ${card} text-[13.5px] text-ink-muted`}>Aucune fiche freelance n&apos;est rattachée à votre compte.</p>
+    );
 
   // Consommation des PO : part de ce freelance et total (pour situer le budget restant).
   const poIds = freelancer.contracts.flatMap((c) => c.mission.purchaseOrders.map((p) => p.id));
@@ -87,7 +96,11 @@ async function Content() {
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="text-[15.5px] font-bold">
                   {c.mission.name}
-                  {current ? <span className="ml-2 rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-bold text-success">En cours</span> : null}
+                  {current ? (
+                    <span className="ml-2 rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-bold text-success">
+                      En cours
+                    </span>
+                  ) : null}
                 </h3>
                 <span className="text-[12.5px] text-ink-subtle">
                   {formatIsoDate(start)} → {formatIsoDate(end)} · manager {c.mission.manager.name}
@@ -144,7 +157,10 @@ async function Content() {
             {freelancer.documents.map((d) => (
               <li key={d.id} className="flex flex-wrap justify-between gap-2">
                 {d.fileKey ? (
-                  <a href={`/api/documents/${encodeURIComponent(d.id)}`} className="font-semibold text-purple underline-offset-2 hover:underline">
+                  <a
+                    href={`/api/documents/${encodeURIComponent(d.id)}`}
+                    className="font-semibold text-purple underline-offset-2 hover:underline"
+                  >
                     {DOCUMENT_LABELS[d.kind as DocumentKind]}
                     <span className="sr-only"> — {d.fileName}</span>
                   </a>

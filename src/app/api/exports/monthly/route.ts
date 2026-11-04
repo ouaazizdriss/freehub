@@ -2,13 +2,15 @@ import { db } from "@/lib/db";
 import { loadMonthDocuments, sealTimesheet } from "@/lib/documents/content";
 import { authorize, fileName, fileResponse } from "@/lib/documents/http";
 import { monthlyWorkbook } from "@/lib/documents/xlsx";
+import { limited, tooManyRequests } from "@/lib/rate-limit";
 
 const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /** Export mensuel multi-freelances (CRA soumis et validés), dans le périmètre de l'utilisateur. */
 export async function GET(request: Request) {
-  const user = await authorize(["MANAGER", "ADMIN", "FINANCE"]);
+  const user = await authorize(["MANAGER", "ADMIN", "FINANCE"], request);
   if (user instanceof Response) return user;
+  if (await limited("monthlyExport", user.id)) return tooManyRequests();
   const m = new URL(request.url).searchParams.get("mois")?.match(/^(\d{4})-(0[1-9]|1[0-2])$/);
   if (!m) return new Response("Paramètre mois=AAAA-MM attendu", { status: 400 });
   const year = Number(m[1]);
@@ -23,7 +25,13 @@ export async function GET(request: Request) {
 
   const book = await monthlyWorkbook(docs);
   await db.auditLog.create({
-    data: { actorId: user.id, entity: "Export", entityId: `${m[1]}-${m[2]}`, action: "MONTHLY_XLSX", payload: { count: docs.length } },
+    data: {
+      actorId: user.id,
+      entity: "Export",
+      entityId: `${m[1]}-${m[2]}`,
+      action: "MONTHLY_XLSX",
+      payload: { count: docs.length },
+    },
   });
   return fileResponse(book, XLSX, fileName("CRA", m[1], m[2], "export") + ".xlsx", "attachment");
 }

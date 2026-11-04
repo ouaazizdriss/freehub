@@ -2,13 +2,30 @@ import "server-only";
 import { getCurrentUser, type CurrentUser } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import type { Role } from "@/generated/prisma/enums";
+import { securityEvent } from "@/lib/security-log";
 import { loadDocument, sealTimesheet, type TimesheetDocument } from "./content";
 
-/** Contrôle d'accès des Route Handlers : codes HTTP explicites plutôt qu'une redirection. */
-export async function authorize(roles?: readonly Role[]): Promise<CurrentUser | Response> {
+/**
+ * Contrôle d'accès des Route Handlers : codes HTTP explicites plutôt qu'une redirection.
+ * Les téléchargements ne sont servis qu'à une navigation de l'application elle-même (ou saisie
+ * directe) : un lien ou une redirection depuis un autre site est refusé (en-tête Sec-Fetch-Site).
+ */
+export async function authorize(roles?: readonly Role[], request?: Request): Promise<CurrentUser | Response> {
+  const site = request?.headers.get("sec-fetch-site");
+  if (site && site !== "same-origin" && site !== "none") {
+    await securityEvent("CROSS_SITE_REQUEST_BLOCKED", { path: request ? new URL(request.url).pathname : null, site });
+    return new Response("Requête intersite refusée", { status: 403 });
+  }
   const user = await getCurrentUser();
   if (!user) return new Response("Authentification requise", { status: 401 });
-  if (roles && !roles.includes(user.role)) return new Response("Accès refusé", { status: 403 });
+  if (roles && !roles.includes(user.role)) {
+    await securityEvent("ACCESS_DENIED", {
+      actorId: user.id,
+      role: user.role,
+      path: request ? new URL(request.url).pathname : null,
+    });
+    return new Response("Accès refusé", { status: 403 });
+  }
   return user;
 }
 

@@ -39,7 +39,9 @@ describe("freelancerStatus", () => {
   const docsOk = { URSSAF: "ok", INSURANCE: "ok", KBIS: "expiring" } as const;
   it("priorité : hors mission, docs KO, fin proche, PO tendu, active", () => {
     expect(freelancerStatus({ contractEnd: "2026-10-31", poLevel: "ok", docs: docsOk, today })).toBe("INACTIVE");
-    expect(freelancerStatus({ contractEnd: "2026-11-20", poLevel: "tight", docs: { ...docsOk, KBIS: "missing" }, today })).toBe("DOCS_KO");
+    expect(freelancerStatus({ contractEnd: "2026-11-20", poLevel: "tight", docs: { ...docsOk, KBIS: "missing" }, today })).toBe(
+      "DOCS_KO",
+    );
     expect(freelancerStatus({ contractEnd: "2026-11-20", poLevel: "tight", docs: docsOk, today })).toBe("ENDING");
     expect(freelancerStatus({ contractEnd: "2027-06-30", poLevel: "tight", docs: docsOk, today })).toBe("PO_TIGHT");
     expect(freelancerStatus({ contractEnd: "2027-06-30", poLevel: "ok", docs: docsOk, today })).toBe("ACTIVE");

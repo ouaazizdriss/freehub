@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AUTH_CODE_PATTERN, computeAuthCode, sameCode, sha256 } from "../auth-code";
 
-const SECRET = "test-secret-at-least-16-chars";
+const SECRET = "test-secret-at-least-thirty-two-chars-long";
 const base = { id: "ts_1", status: "SUBMITTED", contentHash: sha256("contenu"), poNumber: "PO-2026-0417", year: 2026, month1: 7 };
 
 describe("computeAuthCode", () => {

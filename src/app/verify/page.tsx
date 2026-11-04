@@ -30,7 +30,10 @@ export default function VerifyPage() {
           placeholder="CRA-1026-0417-XXXXXXXXXX"
           className="min-h-11 rounded-control border border-line-strong px-3 font-mono text-[14px] uppercase"
         />
-        <button type="submit" className="mt-2 min-h-11 rounded-control bg-gradient-primary text-[13px] font-semibold text-white shadow-cta">
+        <button
+          type="submit"
+          className="mt-2 min-h-11 rounded-control bg-gradient-primary text-[13px] font-semibold text-white shadow-cta"
+        >
           Vérifier
         </button>
       </form>

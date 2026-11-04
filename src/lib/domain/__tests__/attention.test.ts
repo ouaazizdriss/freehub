@@ -4,7 +4,9 @@ import { emptyDay, type EditableDay } from "../cra-editor";
 import { isWeekend, monthDates } from "../calendar";
 
 const work = (date: string, patch: Partial<EditableDay> = {}): EditableDay => ({ ...emptyDay(date), workHalfDays: 2, ...patch });
-const october = monthDates(2026, 10).filter((d) => !isWeekend(d)).map((d) => work(d));
+const october = monthDates(2026, 10)
+  .filter((d) => !isWeekend(d))
+  .map((d) => work(d));
 const input = (patch: Partial<AttentionInput> = {}): AttentionInput => ({
   year: 2026,
   month1: 10,

@@ -53,7 +53,11 @@ export async function absenceBoard(user: CurrentUser, year: number, month1: numb
       freelancer: {
         select: {
           user: { select: { name: true } },
-          absences: { where: inMonth, orderBy: { startDate: "asc" }, select: { id: true, kind: true, startDate: true, endDate: true } },
+          absences: {
+            where: inMonth,
+            orderBy: { startDate: "asc" },
+            select: { id: true, kind: true, startDate: true, endDate: true },
+          },
         },
       },
       mission: { select: { id: true, name: true, country: true } },
@@ -68,12 +72,26 @@ export async function absenceBoard(user: CurrentUser, year: number, month1: numb
 
   type Person = { id: string; name: string; missions: Set<string>; periods: Range[]; absences: Map<string, AbsenceRow> };
   const people = new Map<string, Person>();
-  const missions = new Map<string, { id: string; name: string; country: string; members: Map<string, { freelancerId: string; name: string; periods: Range[]; absences: Range[] }> }>();
+  const missions = new Map<
+    string,
+    {
+      id: string;
+      name: string;
+      country: string;
+      members: Map<string, { freelancerId: string; name: string; periods: Range[]; absences: Range[] }>;
+    }
+  >();
 
   for (const c of contracts) {
     const period = clip({ start: toIso(c.startDate), end: toIso(c.endDate) }, { start: firstIso, end: lastIso })!;
     const absences = c.freelancer.absences.map((a) => toRow({ ...a, comment: null }));
-    const person: Person = people.get(c.freelancerId) ?? { id: c.freelancerId, name: c.freelancer.user.name, missions: new Set(), periods: [], absences: new Map() };
+    const person: Person = people.get(c.freelancerId) ?? {
+      id: c.freelancerId,
+      name: c.freelancer.user.name,
+      missions: new Set(),
+      periods: [],
+      absences: new Map(),
+    };
     person.missions.add(c.mission.name);
     person.periods.push(period);
     for (const a of absences) {
@@ -84,7 +102,9 @@ export async function absenceBoard(user: CurrentUser, year: number, month1: numb
     people.set(c.freelancerId, person);
 
     const mission = missions.get(c.mission.id) ?? { ...c.mission, members: new Map() };
-    const member: { freelancerId: string; name: string; periods: Range[]; absences: Range[] } = mission.members.get(c.freelancerId) ?? { freelancerId: c.freelancerId, name: c.freelancer.user.name, periods: [], absences };
+    const member: { freelancerId: string; name: string; periods: Range[]; absences: Range[] } = mission.members.get(
+      c.freelancerId,
+    ) ?? { freelancerId: c.freelancerId, name: c.freelancer.user.name, periods: [], absences };
     member.periods.push(period);
     mission.members.set(c.freelancerId, member);
     missions.set(c.mission.id, mission);
@@ -94,7 +114,12 @@ export async function absenceBoard(user: CurrentUser, year: number, month1: numb
   const capacity = await Promise.all(
     [...missions.values()].map(async (m) => {
       const holidays = new Set((await holidaysFor(m.country, year, month1)).map((h) => h.date));
-      return missionCapacity({ year, month1, holidays, missions: [{ id: m.id, name: m.name, members: [...m.members.values()] }] })[0];
+      return missionCapacity({
+        year,
+        month1,
+        holidays,
+        missions: [{ id: m.id, name: m.name, members: [...m.members.values()] }],
+      })[0];
     }),
   );
 

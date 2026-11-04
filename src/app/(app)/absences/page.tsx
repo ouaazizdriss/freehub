@@ -54,16 +54,26 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
   return (
     <div className="mt-5 flex flex-col gap-4">
       <nav aria-label="Mois" className="flex items-center gap-2">
-        <Link href={`/absences?mois=${key(prev.year, prev.month1)}`} aria-label="Mois précédent" className="grid size-11 place-items-center rounded-control border border-line-strong bg-surface">
+        <Link
+          href={`/absences?mois=${key(prev.year, prev.month1)}`}
+          aria-label="Mois précédent"
+          className="grid size-11 place-items-center rounded-control border border-line-strong bg-surface"
+        >
           <ChevronLeft aria-hidden className="size-4" />
         </Link>
         <span className="min-w-36 text-center text-[15.5px] font-bold capitalize">{formatMonth(year, month1)}</span>
-        <Link href={`/absences?mois=${key(next.year, next.month1)}`} aria-label="Mois suivant" className="grid size-11 place-items-center rounded-control border border-line-strong bg-surface">
+        <Link
+          href={`/absences?mois=${key(next.year, next.month1)}`}
+          aria-label="Mois suivant"
+          className="grid size-11 place-items-center rounded-control border border-line-strong bg-surface"
+        >
           <ChevronRight aria-hidden className="size-4" />
         </Link>
       </nav>
 
-      <div className={`grid items-start gap-4 ${freelance ? "min-[1100px]:grid-cols-[minmax(0,1fr)_380px]" : "min-[1100px]:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]"}`}>
+      <div
+        className={`grid items-start gap-4 ${freelance ? "min-[1100px]:grid-cols-[minmax(0,1fr)_380px]" : "min-[1100px]:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]"}`}
+      >
         <Gantt rows={board.rows} year={year} month1={month1} user={user} />
         {freelance ? <Declarations absences={mine} today={today} /> : <Capacity capacity={board.capacity} />}
       </div>
@@ -71,7 +81,17 @@ async function Content({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
-function Gantt({ rows, year, month1, user }: { rows: Awaited<ReturnType<typeof absenceBoard>>["rows"]; year: number; month1: number; user: CurrentUser }) {
+function Gantt({
+  rows,
+  year,
+  month1,
+  user,
+}: {
+  rows: Awaited<ReturnType<typeof absenceBoard>>["rows"];
+  year: number;
+  month1: number;
+  user: CurrentUser;
+}) {
   return (
     <section aria-labelledby="gantt-titre" className={card}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -122,7 +142,9 @@ function Gantt({ rows, year, month1, user }: { rows: Awaited<ReturnType<typeof a
                       <span className={`rounded-pill px-2 py-0.5 text-[11px] font-semibold ${TAG[a.kind]}`}>
                         {ABSENCE_LABELS[a.kind]} · {formatIsoDate(a.start)} → {formatIsoDate(a.end)}
                       </span>
-                      {user.role === "ADMIN" ? <CancelAbsenceButton id={a.id} label={`l'absence de ${r.name} du ${formatIsoDate(a.start)}`} /> : null}
+                      {user.role === "ADMIN" ? (
+                        <CancelAbsenceButton id={a.id} label={`l'absence de ${r.name} du ${formatIsoDate(a.start)}`} />
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -155,7 +177,10 @@ function Capacity({ capacity }: { capacity: Awaited<ReturnType<typeof absenceBoa
               </span>
             </div>
             <div aria-hidden className="h-1.5 overflow-hidden rounded-pill bg-surface-sunken">
-              <div className={`h-full rounded-pill ${c.ratio >= CAPACITY_WARNING ? "bg-orange" : "bg-purple"}`} style={{ width: `${Math.min(100, c.ratio * 100)}%` }} />
+              <div
+                className={`h-full rounded-pill ${c.ratio >= CAPACITY_WARNING ? "bg-orange" : "bg-purple"}`}
+                style={{ width: `${Math.min(100, c.ratio * 100)}%` }}
+              />
             </div>
           </li>
         ))}
@@ -200,7 +225,9 @@ function Declarations({ absences, today }: { absences: Awaited<ReturnType<typeof
           {absences.map((a) => (
             <li key={a.id} className="flex flex-col gap-1.5 border-b border-line-faint pb-3 last:border-0">
               <p className="text-[13px]">
-                <span className={`mr-2 rounded-pill px-2 py-0.5 text-[11px] font-semibold ${TAG[a.kind]}`}>{ABSENCE_LABELS[a.kind]}</span>
+                <span className={`mr-2 rounded-pill px-2 py-0.5 text-[11px] font-semibold ${TAG[a.kind]}`}>
+                  {ABSENCE_LABELS[a.kind]}
+                </span>
                 {formatIsoDate(a.start)} → {formatIsoDate(a.end)}
               </p>
               {a.comment ? <p className="text-[12px] text-ink-subtle">{a.comment}</p> : null}

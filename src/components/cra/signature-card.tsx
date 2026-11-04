@@ -45,9 +45,15 @@ export function SignatureCard({ signature }: { signature: { version: number } | 
       <div className="mt-3 grid h-[88px] place-items-center rounded-control border border-dashed border-line-strong bg-surface-soft">
         {signature ? (
           // eslint-disable-next-line @next/next/no-img-element -- image privée servie par une route authentifiée
-          <img src={`/api/signature?v=${signature.version}`} alt="Votre signature" className="max-h-[76px] max-w-[90%] object-contain" />
+          <img
+            src={`/api/signature?v=${signature.version}`}
+            alt="Votre signature"
+            className="max-h-[76px] max-w-[90%] object-contain"
+          />
         ) : (
-          <p className="px-3 text-center text-[11.5px] text-ink-subtle">Obligatoire pour soumettre : elle figure sur le PDF du CRA.</p>
+          <p className="px-3 text-center text-[11.5px] text-ink-subtle">
+            Obligatoire pour soumettre : elle figure sur le PDF du CRA.
+          </p>
         )}
       </div>
       <input

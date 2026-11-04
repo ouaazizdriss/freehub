@@ -109,7 +109,11 @@ export async function requestCorrection(input: z.input<typeof rejectSchema>): Pr
   const user = await requireRole(VALIDATION_DECIDERS);
   const parsed = rejectSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false, error: "INVALID", message: `Motif obligatoire (${MIN_REJECTION_REASON} à ${MAX_REJECTION_REASON} caractères).` };
+    return {
+      ok: false,
+      error: "INVALID",
+      message: `Motif obligatoire (${MIN_REJECTION_REASON} à ${MAX_REJECTION_REASON} caractères).`,
+    };
   }
   const { id, version, reason } = parsed.data;
   const result = await decide(user, id, version, { kind: "REJECT", reason });

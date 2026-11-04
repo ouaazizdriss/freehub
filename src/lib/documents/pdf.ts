@@ -78,7 +78,8 @@ function dayRows(doc: TimesheetDocument) {
     const holiday = doc.holidays.get(date);
     let nature = "Non travaillé";
     if (d?.workHalfDays === 2) nature = holiday || isWeekend(date) ? "Travaillé (dérogation)" : "Travaillé";
-    else if (d?.workHalfDays === 1) nature = `Demi-journée (${d.half === "PM" ? "après-midi" : "matin"})${d.absenceHalfDays ? " + absence" : ""}`;
+    else if (d?.workHalfDays === 1)
+      nature = `Demi-journée (${d.half === "PM" ? "après-midi" : "matin"})${d.absenceHalfDays ? " + absence" : ""}`;
     else if (d && d.absenceHalfDays > 0) nature = "Absence";
     else if (holiday) nature = `Férié — ${holiday}`;
     return {
@@ -122,11 +123,28 @@ export async function renderTimesheetPdf(doc: TimesheetDocument): Promise<Buffer
 
   // En-tête
   pdf.fillColor(C.ink).font("Helvetica-Bold").fontSize(15).text("Compte rendu d'activité", x0, y);
-  pdf.font("Helvetica").fontSize(9).fillColor(C.muted).text(t(formatMonth(doc.year, doc.month1)).replace(/^./, (c) => c.toUpperCase()), x0, y + 19);
+  pdf
+    .font("Helvetica")
+    .fontSize(9)
+    .fillColor(C.muted)
+    .text(
+      t(formatMonth(doc.year, doc.month1)).replace(/^./, (c) => c.toUpperCase()),
+      x0,
+      y + 19,
+    );
   pdf.font("Helvetica-Bold").fontSize(9.5).fillColor(C.ink).text("Freelance Hub", x0, y, { width, align: "right" });
-  pdf.font("Courier").fontSize(8).fillColor(C.muted).text(doc.authCode ?? "Non soumis — sans code", x0, y + 13, { width, align: "right" });
+  pdf
+    .font("Courier")
+    .fontSize(8)
+    .fillColor(C.muted)
+    .text(doc.authCode ?? "Non soumis — sans code", x0, y + 13, { width, align: "right" });
   y += 34;
-  pdf.moveTo(x0, y).lineTo(x0 + width, y).lineWidth(2).strokeColor(C.purple).stroke();
+  pdf
+    .moveTo(x0, y)
+    .lineTo(x0 + width, y)
+    .lineWidth(2)
+    .strokeColor(C.purple)
+    .stroke();
   y += 10;
 
   // Bandeau de statut
@@ -135,7 +153,11 @@ export async function renderTimesheetPdf(doc: TimesheetDocument): Promise<Buffer
       doc.status === "SUBMITTED" ? "Document provisoire — en attente de validation manager" : "Brouillon — document non soumis";
     pdf.save().rect(x0, y, width, 20).fillColor(C.warnBg).fill().restore();
     pdf.rect(x0, y, width, 20).dash(3, { space: 2 }).lineWidth(1).strokeColor(C.warnLine).stroke().undash();
-    pdf.font("Helvetica-Bold").fontSize(8.5).fillColor(C.warnInk).text(text.toUpperCase(), x0, y + 6.5, { width, align: "center", characterSpacing: 1.2 });
+    pdf
+      .font("Helvetica-Bold")
+      .fontSize(8.5)
+      .fillColor(C.warnInk)
+      .text(text.toUpperCase(), x0, y + 6.5, { width, align: "center", characterSpacing: 1.2 });
     y += 28;
   }
 
@@ -149,7 +171,11 @@ export async function renderTimesheetPdf(doc: TimesheetDocument): Promise<Buffer
   ];
   const colW = width / meta.length;
   meta.forEach(([label, value], i) => {
-    pdf.font("Helvetica").fontSize(7).fillColor(C.muted).text(label.toUpperCase(), x0 + i * colW, y, { width: colW - 6, characterSpacing: 0.6 });
+    pdf
+      .font("Helvetica")
+      .fontSize(7)
+      .fillColor(C.muted)
+      .text(label.toUpperCase(), x0 + i * colW, y, { width: colW - 6, characterSpacing: 0.6 });
     pdf.font("Helvetica-Bold").fontSize(9).fillColor(C.ink);
     pdf.text(fit(pdf, value, colW - 6), x0 + i * colW, y + 10, { lineBreak: false });
   });
@@ -174,10 +200,14 @@ export async function renderTimesheetPdf(doc: TimesheetDocument): Promise<Buffer
     pdf.save().rect(tx, ty, tableW, 14).fillColor(C.tint).fill().restore();
     let cx = tx;
     for (const col of cols) {
-      pdf.font("Helvetica-Bold").fontSize(7).fillColor(C.purple).text(col.title, cx + 4, ty + 4, {
-        width: col.w * tableW - 8,
-        align: col.right ? "right" : "left",
-      });
+      pdf
+        .font("Helvetica-Bold")
+        .fontSize(7)
+        .fillColor(C.purple)
+        .text(col.title, cx + 4, ty + 4, {
+          width: col.w * tableW - 8,
+          align: col.right ? "right" : "left",
+        });
       cx += col.w * tableW;
     }
     ty += 14;
@@ -185,14 +215,22 @@ export async function renderTimesheetPdf(doc: TimesheetDocument): Promise<Buffer
       cx = tx;
       [r.label, r.nature, r.days, r.ot, r.onCall].forEach((value, i) => {
         const w = cols[i].w * tableW - 8;
-        pdf.font(i === 0 ? "Helvetica-Bold" : "Helvetica").fontSize(7.8).fillColor(C.ink);
+        pdf
+          .font(i === 0 ? "Helvetica-Bold" : "Helvetica")
+          .fontSize(7.8)
+          .fillColor(C.ink);
         const fitted = fit(pdf, value, w);
         const dx = cols[i].right ? w - pdf.widthOfString(fitted) : 0;
         pdf.text(fitted, cx + 4 + dx, ty + 3, { lineBreak: false });
         cx += cols[i].w * tableW;
       });
       ty += rowH;
-      pdf.moveTo(tx, ty).lineTo(tx + tableW, ty).lineWidth(0.5).strokeColor(C.line).stroke();
+      pdf
+        .moveTo(tx, ty)
+        .lineTo(tx + tableW, ty)
+        .lineWidth(0.5)
+        .strokeColor(C.line)
+        .stroke();
     }
     return ty;
   };
@@ -212,12 +250,28 @@ export async function renderTimesheetPdf(doc: TimesheetDocument): Promise<Buffer
   pdf.save().roundedRect(tx, y, totalsW, boxH, 6).fillColor(C.soft).fill().restore();
   let ly = y + 10;
   for (const [label, value] of lines) {
-    pdf.font("Helvetica").fontSize(8.5).fillColor(C.muted).text(label, tx + 12, ly);
-    pdf.font("Helvetica-Bold").fillColor(C.ink).text(value, tx + 12, ly, { width: totalsW - 24, align: "right" });
+    pdf
+      .font("Helvetica")
+      .fontSize(8.5)
+      .fillColor(C.muted)
+      .text(label, tx + 12, ly);
+    pdf
+      .font("Helvetica-Bold")
+      .fillColor(C.ink)
+      .text(value, tx + 12, ly, { width: totalsW - 24, align: "right" });
     ly += 14;
   }
-  pdf.moveTo(tx + 12, ly + 2).lineTo(tx + totalsW - 12, ly + 2).lineWidth(0.8).strokeColor(C.dashed).stroke();
-  pdf.font("Helvetica-Bold").fontSize(11).fillColor(C.purpleDeep).text("Total à facturer HT", tx + 12, ly + 9);
+  pdf
+    .moveTo(tx + 12, ly + 2)
+    .lineTo(tx + totalsW - 12, ly + 2)
+    .lineWidth(0.8)
+    .strokeColor(C.dashed)
+    .stroke();
+  pdf
+    .font("Helvetica-Bold")
+    .fontSize(11)
+    .fillColor(C.purpleDeep)
+    .text("Total à facturer HT", tx + 12, ly + 9);
   pdf.text(eur(doc.totals.amountCents), tx + 12, ly + 9, { width: totalsW - 24, align: "right" });
 
   // Pied : code-barres + mention de vérification
@@ -225,21 +279,33 @@ export async function renderTimesheetPdf(doc: TimesheetDocument): Promise<Buffer
   if (doc.authCode) {
     const png = await bwipjs.toBuffer({ bcid: "code128", text: doc.authCode, scale: 2, height: 10, includetext: false });
     pdf.image(png, x0, footerY, { fit: [210, 38] });
-    pdf.font("Courier-Bold").fontSize(8).fillColor(C.ink).text(doc.authCode, x0, footerY + 42, { characterSpacing: 1.2 });
-    pdf.font("Helvetica").fontSize(7.5).fillColor(C.muted).text(
-      `Authenticité : scannez le code-barres ou saisissez la référence sur ${appUrl("/verify")}. ` +
-        "Le code change si le document est modifié ou si son statut de validation évolue ; il ne se vérifie plus après une demande de correction.",
-      x0 + 230,
-      footerY + 4,
-      { width: width - 230 },
-    );
+    pdf
+      .font("Courier-Bold")
+      .fontSize(8)
+      .fillColor(C.ink)
+      .text(doc.authCode, x0, footerY + 42, { characterSpacing: 1.2 });
+    pdf
+      .font("Helvetica")
+      .fontSize(7.5)
+      .fillColor(C.muted)
+      .text(
+        `Authenticité : scannez le code-barres ou saisissez la référence sur ${appUrl("/verify")}. ` +
+          "Le code change si le document est modifié ou si son statut de validation évolue ; il ne se vérifie plus après une demande de correction.",
+        x0 + 230,
+        footerY + 4,
+        { width: width - 230 },
+      );
   } else {
-    pdf.font("Helvetica").fontSize(7.5).fillColor(C.muted).text(
-      "Document non soumis : aucun code d'authenticité. Seul le PDF d'un CRA soumis ou validé fait foi.",
-      x0,
-      footerY + 20,
-      { width },
-    );
+    pdf
+      .font("Helvetica")
+      .fontSize(7.5)
+      .fillColor(C.muted)
+      .text(
+        "Document non soumis : aucun code d'authenticité. Seul le PDF d'un CRA soumis ou validé fait foi.",
+        x0,
+        footerY + 20,
+        { width },
+      );
   }
 
   // Signatures, au-dessus du pied de page
@@ -257,24 +323,40 @@ export async function renderTimesheetPdf(doc: TimesheetDocument): Promise<Buffer
   const frozen = doc.status === "SUBMITTED" || doc.status === "VALIDATED";
   const caption = !frozen ? "non signé (brouillon)" : signature ? "signé à la soumission" : "signature non disponible";
   pdf.font("Helvetica").fontSize(7.5).fillColor(C.muted);
-  pdf.text(fit(pdf, `${doc.freelancerName} — ${caption}`, sigW - 20), x0 + 10, boxY + sigH - 16, { width: sigW - 20, align: "center" });
+  pdf.text(fit(pdf, `${doc.freelancerName} — ${caption}`, sigW - 20), x0 + 10, boxY + sigH - 16, {
+    width: sigW - 20,
+    align: "center",
+  });
 
   const mx = x0 + sigW + 20;
   if (validated) {
     pdf.save().roundedRect(mx, boxY, sigW, sigH, 6).fillColor(C.okBg).fill().restore();
     pdf.roundedRect(mx, boxY, sigW, sigH, 6).lineWidth(1.2).strokeColor(C.okInk).stroke();
-    pdf.font("Helvetica-Bold").fontSize(15).fillColor(C.okInk).text("VALIDÉ", mx, boxY + 30, { width: sigW, align: "center", characterSpacing: 2 });
+    pdf
+      .font("Helvetica-Bold")
+      .fontSize(15)
+      .fillColor(C.okInk)
+      .text("VALIDÉ", mx, boxY + 30, { width: sigW, align: "center", characterSpacing: 2 });
     const when = doc.validatedAt
-      ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Africa/Casablanca" }).format(doc.validatedAt)
+      ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short", timeZone: "Africa/Casablanca" }).format(
+          doc.validatedAt,
+        )
       : "";
-    pdf.font("Helvetica").fontSize(7.5).text(fit(pdf, `Validé le ${when} par ${doc.validatedByName ?? doc.managerName}`, sigW - 16), mx + 8, boxY + 58, {
-      width: sigW - 16,
-      align: "center",
-    });
+    pdf
+      .font("Helvetica")
+      .fontSize(7.5)
+      .text(fit(pdf, `Validé le ${when} par ${doc.validatedByName ?? doc.managerName}`, sigW - 16), mx + 8, boxY + 58, {
+        width: sigW - 16,
+        align: "center",
+      });
     pdf.text("Signature électronique Freelance Hub", mx + 8, boxY + 70, { width: sigW - 16, align: "center" });
   } else {
     pdf.roundedRect(mx, boxY, sigW, sigH, 6).dash(4, { space: 3 }).lineWidth(1).strokeColor(C.dashed).stroke().undash();
-    pdf.font("Helvetica").fontSize(8).fillColor(C.muted).text("En attente de validation", mx, boxY + sigH / 2 - 4, { width: sigW, align: "center" });
+    pdf
+      .font("Helvetica")
+      .fontSize(8)
+      .fillColor(C.muted)
+      .text("En attente de validation", mx, boxY + sigH / 2 - 4, { width: sigW, align: "center" });
   }
 
   pdf.end();

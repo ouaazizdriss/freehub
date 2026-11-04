@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { authorize, fileName } from "@/lib/documents/http";
 import { getFile } from "@/lib/storage";
+import { limited, tooManyRequests } from "@/lib/rate-limit";
 
 /**
  * Export des données personnelles d'un freelance (droit d'accès / portabilité, RGPD art. 15 et 20).
@@ -8,8 +9,9 @@ import { getFile } from "@/lib/storage";
  * (?freelance=<id>). Les fichiers (pièces, signature) ne sont pas inclus : téléchargeables séparément.
  */
 export async function GET(request: Request) {
-  const user = await authorize(["FREELANCE", "ADMIN"]);
+  const user = await authorize(["FREELANCE", "ADMIN"], request);
   if (user instanceof Response) return user;
+  if (await limited("rgpdExport", user.id)) return tooManyRequests();
   const requested = new URL(request.url).searchParams.get("freelance");
   const where = user.role === "FREELANCE" ? { userId: user.id } : { id: requested ?? "" };
 
@@ -53,7 +55,16 @@ export async function GET(request: Request) {
           purchaseOrder: { select: { number: true } },
           days: {
             orderBy: { date: "asc" },
-            select: { date: true, workHalfDays: true, absenceHalfDays: true, half: true, overtimeHours: true, onCall: true, comment: true, exceptionReason: true },
+            select: {
+              date: true,
+              workHalfDays: true,
+              absenceHalfDays: true,
+              half: true,
+              overtimeHours: true,
+              onCall: true,
+              comment: true,
+              exceptionReason: true,
+            },
           },
         },
       },
@@ -82,7 +93,9 @@ export async function GET(request: Request) {
       generator: "Freelance Hub",
       data: {
         ...rest,
-        signature: signature ? { uploadedAt: signature.uploadedAt, imagePngBase64: signatureFile?.toString("base64") ?? null } : null,
+        signature: signature
+          ? { uploadedAt: signature.uploadedAt, imagePngBase64: signatureFile?.toString("base64") ?? null }
+          : null,
         auditTrail,
         reminders,
       },

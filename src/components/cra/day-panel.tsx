@@ -75,7 +75,13 @@ export function DayPanel(props: Props) {
         <legend className={`${label} mb-2`}>Type de journée</legend>
         <div className="grid grid-cols-2 gap-2">
           {(Object.keys(DAY_KIND_LABELS) as DayKind[]).map((k) => (
-            <button key={k} type="button" aria-pressed={kind === k} onClick={() => props.onChange(withKind(day, k))} className={segment(kind === k)}>
+            <button
+              key={k}
+              type="button"
+              aria-pressed={kind === k}
+              onClick={() => props.onChange(withKind(day, k))}
+              className={segment(kind === k)}
+            >
               {DAY_KIND_LABELS[k]}
             </button>
           ))}
@@ -85,7 +91,13 @@ export function DayPanel(props: Props) {
           <div className="mt-1 flex flex-col gap-2 rounded-control bg-surface-soft p-2.5">
             <div role="group" aria-label="Demi-journée travaillée" className="grid grid-cols-2 gap-1.5">
               {(["AM", "PM"] as const).map((h) => (
-                <button key={h} type="button" aria-pressed={day.half === h} onClick={() => set({ half: h })} className={segment(day.half === h)}>
+                <button
+                  key={h}
+                  type="button"
+                  aria-pressed={day.half === h}
+                  onClick={() => set({ half: h })}
+                  className={segment(day.half === h)}
+                >
                   {h === "AM" ? "Matin" : "Après-midi"}
                 </button>
               ))}

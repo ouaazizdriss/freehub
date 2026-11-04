@@ -2,6 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { isStorageKey } from "./storage-keys";
 
 /**
  * Stockage privé des fichiers (signatures, pièces justificatives).
@@ -12,10 +13,9 @@ import path from "node:path";
  */
 // Racine résolue à l'exécution : exclue du traçage de fichiers du build (sinon tout le projet est embarqué).
 const ROOT = path.resolve(/* turbopackIgnore: true */ process.cwd(), process.env.STORAGE_DIR ?? "storage");
-const KEY = /^(signatures|documents)\/[0-9a-f-]{36}\.(png|pdf|jpg)$/;
 
 function resolve(key: string): string {
-  if (!KEY.test(key)) throw new Error("Clé de stockage invalide");
+  if (!isStorageKey(key)) throw new Error("Clé de stockage invalide");
   const full = path.resolve(ROOT, key);
   if (!full.startsWith(ROOT + path.sep)) throw new Error("Clé de stockage invalide");
   return full;

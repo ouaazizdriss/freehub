@@ -5,6 +5,7 @@ import sharp from "sharp";
 import { requireRole } from "@/lib/auth/dal";
 import { db } from "@/lib/db";
 import { newKey, putFile } from "@/lib/storage";
+import { limited } from "@/lib/rate-limit";
 
 export type SignatureResult = { ok: true } | { ok: false; message: string };
 
@@ -18,6 +19,7 @@ const MAX_SIGNATURE_BYTES = 1024 * 1024;
  */
 export async function uploadSignature(formData: FormData): Promise<SignatureResult> {
   const user = await requireRole(["FREELANCE"]);
+  if (await limited("signatureUpload", user.id)) return { ok: false, message: "Trop de dépôts : réessayez dans une heure." };
   const file = formData.get("signature");
   if (!(file instanceof File) || file.size === 0) return { ok: false, message: "Choisissez une image." };
   if (file.size > MAX_SIGNATURE_BYTES) return { ok: false, message: "Image trop lourde (1 Mo maximum)." };

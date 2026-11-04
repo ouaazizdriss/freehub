@@ -52,8 +52,7 @@ const saveSchema = z.object({
 const submitSchema = z.object({ poId: z.string().min(1), month: monthKey, version: z.int().nonnegative() });
 
 export type ActionError =
-  | { ok: false; error: "INVALID"; issues: SubmissionIssue[] }
-  | { ok: false; error: "CONFLICT" | "LOCKED" | "NOT_FOUND" };
+  { ok: false; error: "INVALID"; issues: SubmissionIssue[] } | { ok: false; error: "CONFLICT" | "LOCKED" | "NOT_FOUND" };
 export type SaveResult = { ok: true; version: number | null; savedAt: string } | ActionError;
 export type SubmitResult = { ok: true } | ActionError;
 
@@ -138,7 +137,10 @@ export async function saveDraft(input: z.input<typeof saveSchema>): Promise<Save
       if (!ts) {
         if (version !== null) return { ok: false, error: "CONFLICT" };
         if (days.length === 0) return { ok: true, version: null, savedAt: new Date().toISOString() };
-        ts = await tx.timesheet.create({ data: { ...key, contractId: contract.id }, select: { id: true, version: true, status: true } });
+        ts = await tx.timesheet.create({
+          data: { ...key, contractId: contract.id },
+          select: { id: true, version: true, status: true },
+        });
         await tx.auditLog.create({ data: { actorId: user.id, entity: "Timesheet", entityId: ts.id, action: "CREATE" } });
       } else if (!EDITABLE_STATUSES.includes(ts.status)) {
         return { ok: false, error: "LOCKED" };
@@ -198,6 +200,12 @@ export async function submitTimesheet(input: z.input<typeof submitSchema>): Prom
   const result = await db.$transaction(async (tx): Promise<SubmitResult> => {
     // Sérialise les soumissions sur un même PO : le contrôle du reste à consommer reste juste.
     await tx.$queryRaw`SELECT id FROM "PurchaseOrder" WHERE id = ${po.id} FOR UPDATE`;
+    // Taux relus sous verrou du contrat (une modification concurrente des taux attend la fin de la soumission).
+    await tx.$queryRaw`SELECT id FROM "Contract" WHERE id = ${contract.id} FOR UPDATE`;
+    const fresh = await tx.contract.findUniqueOrThrow({
+      where: { id: contract.id },
+      select: { dailyRateCents: true, overtimeHourlyRateCents: true, onCallRateCents: true },
+    });
 
     const [ts, signature] = await Promise.all([
       tx.timesheet.findUnique({
@@ -225,9 +233,9 @@ export async function submitTimesheet(input: z.input<typeof submitSchema>): Prom
     if (errors.length > 0) return { ok: false, error: "INVALID", issues: errors };
 
     const rates = {
-      dailyRateCents: contract.dailyRateCents,
-      overtimeHourlyRateCents: contract.overtimeHourlyRateCents,
-      onCallRateCents: contract.onCallRateCents,
+      dailyRateCents: fresh.dailyRateCents,
+      overtimeHourlyRateCents: fresh.overtimeHourlyRateCents,
+      onCallRateCents: fresh.onCallRateCents,
     };
     const totals = computeTotals(days, rates);
     const updated = await tx.timesheet.updateMany({

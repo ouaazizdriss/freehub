@@ -7,7 +7,8 @@ export const LOCAL_DRAFT_PREFIX = "fh:cra:";
 
 function clearLocalDrafts() {
   try {
-    for (const key of Object.keys(window.localStorage)) if (key.startsWith(LOCAL_DRAFT_PREFIX)) window.localStorage.removeItem(key);
+    for (const key of Object.keys(window.localStorage))
+      if (key.startsWith(LOCAL_DRAFT_PREFIX)) window.localStorage.removeItem(key);
   } catch {
     /* stockage indisponible */
   }

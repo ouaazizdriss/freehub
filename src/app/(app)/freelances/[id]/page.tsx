@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ActivationForm, EditContractForm, EditFreelancerForm, NewContractForm, UploadDocumentForm } from "@/components/referential/forms";
+import {
+  ActivationForm,
+  EditContractForm,
+  EditFreelancerForm,
+  NewContractForm,
+  UploadDocumentForm,
+} from "@/components/referential/forms";
 import { DocumentStatePill, formatIsoDate } from "@/components/referential/ui";
 import { PageSkeleton } from "@/components/shell/skeletons";
 import { Avatar } from "@/components/ui/avatar";
@@ -52,7 +58,11 @@ async function Content({ params }: { params: Promise<{ id: string }> }) {
           <h1 className="text-[27px] leading-tight font-bold tracking-[-0.03em]">{f.user.name}</h1>
           <p className="text-[13.5px] text-ink-muted">
             {f.jobTitle} · {f.user.email}
-            {!f.user.active ? <span className="ml-2 rounded-pill bg-surface-sunken px-2 py-0.5 text-[11px] font-bold text-ink-subtle">Compte désactivé</span> : null}
+            {!f.user.active ? (
+              <span className="ml-2 rounded-pill bg-surface-sunken px-2 py-0.5 text-[11px] font-bold text-ink-subtle">
+                Compte désactivé
+              </span>
+            ) : null}
           </p>
         </div>
       </header>
@@ -72,15 +82,20 @@ async function Content({ params }: { params: Promise<{ id: string }> }) {
                     <div className="flex flex-wrap items-baseline justify-between gap-2 text-[13px]">
                       <span className="font-semibold">
                         {c.mission.name}
-                        {current ? <span className="ml-2 rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-bold text-success">En cours</span> : null}
+                        {current ? (
+                          <span className="ml-2 rounded-pill bg-success-bg px-2 py-0.5 text-[11px] font-bold text-success">
+                            En cours
+                          </span>
+                        ) : null}
                       </span>
                       <span className="text-ink-subtle">
                         {formatIsoDate(c.startDate)} → {formatIsoDate(c.endDate)}
                       </span>
                     </div>
                     <p className="mt-1 text-[12.5px] text-ink-3 tabular-nums">
-                      TJM {formatEur(c.dailyRateCents, c.currency)} · heure sup. {formatEur(c.overtimeHourlyRateCents, c.currency)} · astreinte{" "}
-                      {formatEur(c.onCallRateCents, c.currency)} · {c._count.timesheets} CRA
+                      TJM {formatEur(c.dailyRateCents, c.currency)} · heure sup.{" "}
+                      {formatEur(c.overtimeHourlyRateCents, c.currency)} · astreinte {formatEur(c.onCallRateCents, c.currency)} ·{" "}
+                      {c._count.timesheets} CRA
                     </p>
                     {editor ? (
                       <details className="mt-2">
@@ -109,7 +124,12 @@ async function Content({ params }: { params: Promise<{ id: string }> }) {
                 <div className="mt-3">
                   <NewContractForm
                     freelancerId={f.id}
-                    missions={missions.map((m) => ({ id: m.id, name: m.name, start: formatIsoDate(toIso(m.startDate)), end: formatIsoDate(toIso(m.endDate)) }))}
+                    missions={missions.map((m) => ({
+                      id: m.id,
+                      name: m.name,
+                      start: formatIsoDate(toIso(m.startDate)),
+                      end: formatIsoDate(toIso(m.endDate)),
+                    }))}
                   />
                 </div>
               </details>
@@ -122,7 +142,14 @@ async function Content({ params }: { params: Promise<{ id: string }> }) {
                 Fiche
               </h2>
               <EditFreelancerForm
-                profile={{ id: f.id, name: f.user.name, email: f.user.email, jobTitle: f.jobTitle, company: f.company, siret: f.siret }}
+                profile={{
+                  id: f.id,
+                  name: f.user.name,
+                  email: f.user.email,
+                  jobTitle: f.jobTitle,
+                  company: f.company,
+                  siret: f.siret,
+                }}
               />
             </section>
           ) : (
@@ -158,7 +185,10 @@ async function Content({ params }: { params: Promise<{ id: string }> }) {
                 {f.documents.map((d) => (
                   <li key={d.id} className="flex flex-wrap items-baseline justify-between gap-2">
                     {d.hasFile ? (
-                      <a href={`/api/documents/${encodeURIComponent(d.id)}`} className="font-semibold text-purple underline-offset-2 hover:underline">
+                      <a
+                        href={`/api/documents/${encodeURIComponent(d.id)}`}
+                        className="font-semibold text-purple underline-offset-2 hover:underline"
+                      >
                         {DOCUMENT_LABELS[d.kind as DocumentKind]}
                         <span className="sr-only"> — {d.fileName}</span>
                       </a>

@@ -14,8 +14,8 @@ npm run db:seed               # données de démo (maquette) — jamais en produ
 npm run dev                   # http://localhost:3000
 ```
 
-Sans SSO configuré, `/login` propose les comptes de démo (activé par `AUTH_DEV_LOGIN=true`,
-toujours désactivé quand `NODE_ENV=production`).
+Sans SSO configuré, `/login` propose les comptes de démo : mettre `AUTH_DEV_LOGIN="true"` dans `.env`
+(désactivé par défaut ; toujours inactif en production, si le SSO est configuré ou si `APP_URL` n'est pas locale).
 
 | Script | Rôle |
 |---|---|

@@ -7,7 +7,17 @@ export const initials = (name: string) =>
     .join("");
 
 /** Avatar à initiales (décoratif : le nom est toujours écrit à côté). */
-export function Avatar({ name, size = 30, active = false, gradient = false }: { name: string; size?: number; active?: boolean; gradient?: boolean }) {
+export function Avatar({
+  name,
+  size = 30,
+  active = false,
+  gradient = false,
+}: {
+  name: string;
+  size?: number;
+  active?: boolean;
+  gradient?: boolean;
+}) {
   const tone = gradient ? "bg-gradient-primary text-white" : active ? "bg-purple text-white" : "bg-lavender text-purple";
   return (
     <span

@@ -15,7 +15,9 @@ export default function NewFreelancerPage() {
         ‹ Freelances
       </Link>
       <h1 className="mt-2 text-[27px] leading-tight font-bold tracking-[-0.03em]">Nouveau freelance</h1>
-      <p className="text-[13.5px] text-ink-muted">Le compte se connecte par SSO avec cet e-mail. Ajoutez ensuite son contrat depuis sa fiche.</p>
+      <p className="text-[13.5px] text-ink-muted">
+        Le compte se connecte par SSO avec cet e-mail. Ajoutez ensuite son contrat depuis sa fiche.
+      </p>
       <Suspense fallback={<SectionSkeleton />}>
         <Gate />
       </Suspense>
