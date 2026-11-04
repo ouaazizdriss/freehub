@@ -1,0 +1,285 @@
+// Freelance Hub — modèle de données (Lot 0)
+//
+// Conventions :
+// - Montants en centimes (Int) : pas de flottants pour l'argent.
+// - Jours en demi-journées (Int 0..2) : 1 j = 2, 0,5 j = 1. Permet une journée mixte
+//   (0,5 travaillé + 0,5 absence) que l'enum unique du prototype ne savait pas représenter.
+// - Dates "calendaires" en @db.Date (pas d'heure, pas de fuseau).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  FREELANCE
+  MANAGER
+  ADMIN
+  FINANCE
+}
+
+enum TimesheetStatus {
+  DRAFT
+  SUBMITTED
+  VALIDATED
+  REJECTED
+}
+
+enum DayHalf {
+  AM
+  PM
+}
+
+enum AbsenceKind {
+  LEAVE
+  UNAVAILABLE
+  SICK
+}
+
+enum DocumentKind {
+  URSSAF
+  INSURANCE
+  KBIS
+  OTHER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  role      Role
+  active    Boolean  @default(true)
+  /// Date de désactivation (départ) : point de départ de l'anonymisation RGPD
+  deactivatedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  freelancer          Freelancer?
+  managedMissions     Mission[]   @relation("MissionManager")
+  validatedTimesheets Timesheet[] @relation("TimesheetValidator")
+  auditLogs           AuditLog[]
+}
+
+model Freelancer {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  jobTitle  String
+  company   String?
+  siret     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contracts  Contract[]
+  timesheets Timesheet[]
+  absences   Absence[]
+  documents  FreelancerDocument[]
+  signature  Signature?
+}
+
+model Mission {
+  id        String   @id @default(cuid())
+  name      String
+  managerId String
+  manager   User     @relation("MissionManager", fields: [managerId], references: [id])
+  /// Pays du calendrier des jours fériés applicable (ISO 3166-1 alpha-2 : MA, FR…)
+  country   String   @default("MA") @db.Char(2)
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+
+  purchaseOrders PurchaseOrder[]
+  contracts      Contract[]
+
+  @@index([managerId])
+}
+
+model PurchaseOrder {
+  id             String   @id @default(cuid())
+  number         String   @unique
+  missionId      String
+  mission        Mission  @relation(fields: [missionId], references: [id])
+  /// Budget en demi-journées (480 j = 960)
+  budgetHalfDays Int
+  currency       String   @default("EUR") @db.Char(3)
+  startDate      DateTime @db.Date
+  endDate        DateTime @db.Date
+
+  timesheets Timesheet[]
+
+  @@index([missionId])
+}
+
+/// Conditions financières d'un freelance sur une mission.
+/// Les taux HS / astreinte sont contractuels (et non des constantes globales).
+model Contract {
+  id                      String     @id @default(cuid())
+  freelancerId            String
+  freelancer              Freelancer @relation(fields: [freelancerId], references: [id])
+  missionId               String
+  mission                 Mission    @relation(fields: [missionId], references: [id])
+  dailyRateCents          Int
+  overtimeHourlyRateCents Int
+  onCallRateCents         Int
+  currency                String     @default("EUR") @db.Char(3)
+  startDate               DateTime   @db.Date
+  endDate                 DateTime   @db.Date
+
+  timesheets Timesheet[]
+
+  @@index([freelancerId])
+  @@index([missionId])
+}
+
+/// Un CRA = (freelance, bon de commande, mois). Unicité garantie en base.
+model Timesheet {
+  id              String          @id @default(cuid())
+  freelancerId    String
+  freelancer      Freelancer      @relation(fields: [freelancerId], references: [id])
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id])
+  contractId      String
+  contract        Contract        @relation(fields: [contractId], references: [id])
+  /// Premier jour du mois concerné
+  month           DateTime        @db.Date
+  status          TimesheetStatus @default(DRAFT)
+  /// Verrou optimiste : incrémenté à chaque écriture
+  version         Int             @default(0)
+
+  // Taux figés à la soumission : une évolution ultérieure du contrat ne modifie pas un CRA soumis.
+  dailyRateCents          Int?
+  overtimeHourlyRateCents Int?
+  onCallRateCents         Int?
+
+  // Totaux calculés côté serveur (source de vérité)
+  totalWorkHalfDays    Int @default(0)
+  totalAbsenceHalfDays Int @default(0)
+  totalOvertimeHours   Int @default(0)
+  totalOnCall          Int @default(0)
+  totalAmountCents     Int @default(0)
+
+  /// Code d'authenticité CRA-<MMYY>-<PO>-<clé HMAC> (Lot 3)
+  authCode        String?   @unique
+  /// Empreinte SHA-256 du contenu couvert par le code
+  contentHash     String?
+  /// Signature du freelance figée à la soumission (clé de stockage) : le PDF reste identique
+  /// même si le freelance change ensuite sa signature.
+  signatureKey    String?
+  /// Contenu affiché figé à la soumission (noms, mission, PO, devise, empreinte de la signature,
+  /// validateur) : un renommage ultérieur ne modifie ni le PDF ni sa vérification.
+  snapshot        Json?
+  /// Code du document provisoire (statut soumis), conservé après validation pour reconnaître
+  /// un PDF provisoire remplacé par la version validée.
+  submittedCode   String?   @unique
+  submittedAt     DateTime?
+  validatedAt     DateTime?
+  validatedById   String?
+  validatedBy     User?     @relation("TimesheetValidator", fields: [validatedById], references: [id])
+  rejectionReason String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  days TimesheetDay[]
+
+  @@unique([freelancerId, purchaseOrderId, month])
+  @@index([status, month])
+}
+
+model TimesheetDay {
+  id              String    @id @default(cuid())
+  timesheetId     String
+  timesheet       Timesheet @relation(fields: [timesheetId], references: [id], onDelete: Cascade)
+  date            DateTime  @db.Date
+  /// 0, 1 (demi-journée) ou 2 (journée) — workHalfDays + absenceHalfDays <= 2 (contrainte CHECK)
+  workHalfDays    Int       @default(0)
+  absenceHalfDays Int       @default(0)
+  /// Demi-journée concernée quand workHalfDays = 1
+  half            DayHalf?
+  overtimeHours   Int       @default(0)
+  onCall          Boolean   @default(false)
+  comment         String?
+  /// Motif obligatoire pour une saisie sur week-end ou jour férié
+  exceptionReason String?
+
+  @@unique([timesheetId, date])
+}
+
+model Absence {
+  id           String      @id @default(cuid())
+  freelancerId String
+  freelancer   Freelancer  @relation(fields: [freelancerId], references: [id])
+  kind         AbsenceKind
+  startDate    DateTime    @db.Date
+  endDate      DateTime    @db.Date
+  comment      String?
+  createdAt    DateTime    @default(now())
+
+  @@index([freelancerId, startDate])
+}
+
+model FreelancerDocument {
+  id           String       @id @default(cuid())
+  freelancerId String
+  freelancer   Freelancer   @relation(fields: [freelancerId], references: [id])
+  kind         DocumentKind
+  /// Clé de l'objet dans le stockage privé (S3 / Azure Blob)
+  fileKey      String?
+  /// Nom affiché (assaini), type et taille du fichier déposé
+  fileName     String?
+  mimeType     String?
+  sizeBytes    Int?
+  expiresAt    DateTime?    @db.Date
+  uploadedById String?
+  uploadedAt   DateTime     @default(now())
+
+  @@index([freelancerId, kind])
+}
+
+model Signature {
+  id           String     @id @default(cuid())
+  freelancerId String     @unique
+  freelancer   Freelancer @relation(fields: [freelancerId], references: [id])
+  fileKey      String
+  mimeType     String
+  uploadedAt   DateTime   @default(now())
+}
+
+model Holiday {
+  id        String   @id @default(cuid())
+  country   String   @db.Char(2)
+  date      DateTime @db.Date
+  label     String
+  /// Date estimée (fêtes lunaires), à confirmer à l'annonce officielle
+  tentative Boolean  @default(false)
+
+  @@unique([country, date])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  entity    String
+  entityId  String
+  action    String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
+
+/// Relance envoyée (une seule par freelance, mois et type : la contrainte d'unicité tranche
+/// entre deux exécutions concurrentes du planificateur).
+model ReminderLog {
+  id           String   @id @default(cuid())
+  freelancerId String
+  month        DateTime @db.Date
+  kind         String
+  sentAt       DateTime @default(now())
+
+  @@unique([freelancerId, month, kind])
+}

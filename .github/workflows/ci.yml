@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: freelancehub
+          POSTGRES_PASSWORD: freelancehub
+          POSTGRES_DB: freelancehub
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U freelancehub" --health-interval 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://freelancehub:freelancehub@localhost:5432/freelancehub?schema=public
+      AUTH_SECRET: ci-only-not-a-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - name: Migrations (base vierge) + seed
+        run: npx prisma migrate deploy && npx prisma db seed
+      - run: npm run build
+
+  e2e:
+    needs: check
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: freelancehub
+          POSTGRES_PASSWORD: freelancehub
+          POSTGRES_DB: freelancehub_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U freelancehub" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://freelancehub:freelancehub@localhost:5432/freelancehub_e2e?schema=public
+      E2E_DATABASE_URL: postgresql://freelancehub:freelancehub@localhost:5432/freelancehub_e2e?schema=public
+      AUTH_SECRET: ci-only-not-a-secret-e2e-0123456789
+      AUTH_DEV_LOGIN: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npx playwright install --with-deps chrome
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+

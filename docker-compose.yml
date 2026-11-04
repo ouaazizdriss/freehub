@@ -1,0 +1,18 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: freelance-hub-db
+    environment:
+      POSTGRES_USER: freelancehub
+      POSTGRES_PASSWORD: freelancehub
+      POSTGRES_DB: freelancehub
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U freelancehub"]
+      interval: 3s
+      retries: 20
+volumes:
+  pgdata:

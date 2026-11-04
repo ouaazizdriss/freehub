@@ -1,26 +1,143 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design tokens — Freelance Hub.
+ * Source : design_handoff_freelance_cra/README.md, avec corrections de contraste WCAG AA
+ * (contrôlées par src/lib/design/__tests__/contrast.test.ts) :
+ *   - texte tertiaire #9A93A8 / #8C8399 (2,9–3,6:1) → --color-ink-subtle #6E6680 (5,4:1)
+ *   - #B0A6BC / #C4BCCE réservés au décoratif (jamais pour du texte porteur d'info)
+ *   - texte orange #FF5A00 → --color-orange-ink #A33B00 ; l'orange vif reste pour les fonds/barres
+ *   - pastille rose texte blanc → fond --color-pink-ink #D6247C
+ *   - texte férié #3F7A87 → #37707C
+ * Utiliser les noms sémantiques (bg-surface, text-ink-subtle, bg-cell-work…), jamais d'hex en dur.
+ */
+@theme {
+  --font-sans: var(--font-inter), -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Marque */
+  --color-purple: #6f259f;
+  --color-purple-deep: #4e1a73;
+  --color-pink: #ff2d95;
+  --color-pink-ink: #d6247c;
+  --color-orange: #ff5a00;
+  --color-orange-ink: #a33b00;
+  --color-cyan: #5fb3c1;
+  --color-cyan-ink: #37707c;
+  --color-lavender: #eadcea;
+  --color-lavender-light: #f8e7f9;
+  --color-purple-tint: #bea2d1;
+
+  /* Neutres */
+  --color-ink: #1a1a2e;
+  --color-ink-2: #4a4356;
+  --color-ink-3: #5a5266;
+  --color-ink-muted: #6b6b7b;
+  --color-ink-subtle: #6e6680;
+  --color-ink-faint: #b0a6bc; /* décoratif uniquement */
+  --color-line: #efe9f3;
+  --color-line-strong: #e7dfec;
+  --color-line-soft: #f2ecf5;
+  --color-line-faint: #f6f3f8;
+  --color-page: #faf8fb;
+  --color-surface: #ffffff;
+  --color-surface-soft: #fbf8fc;
+  --color-surface-sunken: #f4f0f7;
+
+  /* Fonctionnelles */
+  --color-success-bg: #e7f6ef;
+  --color-success: #1e6b4c;
+  --color-success-bright: #2ea97b;
+  --color-warning-bg: #fef0d8;
+  --color-warning-line: #f4dfb3;
+  --color-warning: #8a6212;
+  --color-warning-bright: #fdcb63;
+  --color-danger-bg: #fdeaea;
+  --color-danger: #b3413f;
+  --color-danger-bright: #ff5a5f;
+  --color-info-bg: #e8f4f7;
+  --color-info-line: #cde6ec;
+
+  /* Cellules de la grille CRA : fond / bordure / texte */
+  --color-cell-work: #eadcea;
+  --color-cell-work-line: #bea2d1;
+  --color-cell-work-ink: #4e1a73;
+  --color-cell-half: #f8e7f9;
+  --color-cell-half-line: #ebd3ee;
+  --color-cell-half-ink: #6f259f;
+  --color-cell-absence: #fef0d8;
+  --color-cell-absence-line: #f4dfb3;
+  --color-cell-absence-ink: #8a6212;
+  --color-cell-holiday: #e8f4f7;
+  --color-cell-holiday-line: #cde6ec;
+  --color-cell-holiday-ink: #37707c;
+  --color-cell-weekend: #faf8fb;
+  --color-cell-weekend-line: #f2ecf5;
+  --color-cell-weekend-ink: #6e6680;
+  --color-cell-empty: #ffffff;
+  --color-cell-empty-line: #efe9f3;
+  --color-cell-empty-ink: #6e6680;
+
+  /* Rayons */
+  --radius-swatch: 4px;
+  --radius-chip: 8px;
+  --radius-control: 10px;
+  --radius-cell: 11px;
+  --radius-card-sm: 14px;
+  --radius-card: 16px;
+  --radius-pill: 20px;
+
+  /* Ombres */
+  --shadow-card: 0 2px 12px rgba(111, 37, 159, 0.05);
+  --shadow-cta: 0 3px 10px rgba(255, 45, 149, 0.28);
+  --shadow-cta-success: 0 3px 10px rgba(30, 107, 76, 0.25);
+  --shadow-selected: 0 4px 14px rgba(255, 45, 149, 0.2);
+  --shadow-segment: 0 1px 4px rgba(111, 37, 159, 0.12);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html,
+  body {
+    background: var(--color-page);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  /* Focus visible systématique (absent du prototype) */
+  :focus-visible {
+    outline: 2px solid var(--color-pink-ink);
+    outline-offset: 2px;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #e4dce9;
+    border-radius: 10px;
+    border: 3px solid var(--color-page);
+  }
+
+  @media print {
+    [data-noprint] {
+      display: none !important;
+    }
+    html,
+    body {
+      background: #ffffff;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@utility bg-gradient-brand {
+  background-image: linear-gradient(135deg, #ff5a00 0%, #ff2d95 50%, #6f259f 100%);
+}
+@utility bg-gradient-primary {
+  background-image: linear-gradient(135deg, #ff2d95 0%, #6f259f 100%);
+}
+@utility bg-gradient-closing {
+  background-image: linear-gradient(135deg, #5fb3c1 0%, #6f259f 100%);
+}
+@utility bg-gradient-rail {
+  background-image: linear-gradient(180deg, #6f259f 0%, #4e1a73 100%);
 }
